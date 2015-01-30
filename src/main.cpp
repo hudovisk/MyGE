@@ -1,13 +1,14 @@
 
 #include "main.h"
 
-int main()
+int main(int argc, char** argv)
 {
 	Engine engine;
 
-	engine.MainLoop();
-
-	printf("Hello World!\n");
+	if(engine.init())
+		engine.start();
+	else
+		return -1;
 
 	return 0;
 }
