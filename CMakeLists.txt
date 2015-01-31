@@ -11,10 +11,13 @@ set (${PROJECT_NAME}_VERSION_MINOR 1)
 #include
 include_directories(src/)
 include_directories(extra/)
+
 #sub-systems
 add_subdirectory(src/core)
 add_subdirectory(src/debug)
 add_subdirectory(src/events)
+add_subdirectory(src/render)
 
 add_executable (MyGE src/main.cpp)
+
 target_link_libraries(MyGE core)

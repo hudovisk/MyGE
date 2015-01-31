@@ -2,6 +2,7 @@
 #define ENGINE_H
 
 #include "events/EventManager.h"
+#include "render/RenderManager.h"
 
 /**
  * @brief EngineState enum
@@ -15,7 +16,6 @@ enum class EngineState
 	PAUSED,
 	EXITED,
 };
-
 
 /**
  * @brief Engine class
@@ -64,6 +64,7 @@ public:
 	EngineState getCurrentState();
 
 	static EventManager g_eventManager;
+	static RenderManager g_renderManager;
 
 private:
 	void update(float updateTime);

@@ -7,6 +7,7 @@
 #include <iostream>
 
 EventManager Engine::g_eventManager;
+RenderManager Engine::g_renderManager;
 
 Engine::Engine()
 	: m_state(EngineState::NOT_STARTED), m_initialised(false)
@@ -21,6 +22,7 @@ Engine::~Engine()
 
 bool Engine::destroy()
 {  
+	g_renderManager.destroy();
 	g_eventManager.destroy();
 	System::destroy();
 	Logger::destroy();
@@ -42,7 +44,13 @@ bool Engine::init()
 	if(!g_eventManager.init())
 		return false;
 
+	if(!g_renderManager.init(800,600))
+		return false;
+
 	LOG(INFO, "Engine initialised");
+
+	g_eventManager.addListenner(EventListenerDelegate::from_method<Engine,&Engine::onWindowClosed>(this),
+															(new WindowClosedEventData)->getType());
 
 	m_initialised = true;
 
