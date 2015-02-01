@@ -3,7 +3,7 @@
 
 #include "events/EventManager.h"
 #include "render/RenderManager.h"
-
+#include "debug/DebugRenderManager.h"
 /**
  * @brief EngineState enum
  * @details Represents the possible states the engine can be.
@@ -65,6 +65,7 @@ public:
 
 	static EventManager g_eventManager;
 	static RenderManager g_renderManager;
+	static DebugRenderManager g_debugRenderManager;
 
 private:
 	void update(float updateTime);

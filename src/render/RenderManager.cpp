@@ -71,6 +71,8 @@ bool RenderManager::initGL()
 	glCullFace(GL_FRONT);
 
 	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_BLEND);
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 
 	return true;
 }
@@ -97,6 +99,11 @@ void RenderManager::preRender()
 
 	glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT   | GL_ENABLE_BIT  |
 	             GL_TEXTURE_BIT      | GL_TRANSFORM_BIT | GL_VIEWPORT_BIT);
+}
+
+void RenderManager::render()
+{
+
 }
 
 void RenderManager::postRender()

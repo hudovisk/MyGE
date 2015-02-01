@@ -8,6 +8,7 @@
 
 EventManager Engine::g_eventManager;
 RenderManager Engine::g_renderManager;
+DebugRenderManager Engine::g_debugRenderManager;
 
 Engine::Engine()
 	: m_state(EngineState::NOT_STARTED), m_initialised(false)
@@ -22,6 +23,7 @@ Engine::~Engine()
 
 bool Engine::destroy()
 {  
+	g_debugRenderManager.destroy();
 	g_renderManager.destroy();
 	g_eventManager.destroy();
 	System::destroy();
@@ -47,6 +49,9 @@ bool Engine::init()
 	if(!g_renderManager.init(800,600))
 		return false;
 
+	if(!g_debugRenderManager.init())
+		return false;
+
 	LOG(INFO, "Engine initialised");
 
 	g_eventManager.addListenner(EventListenerDelegate::from_method<Engine,&Engine::onWindowClosed>(this),
@@ -67,6 +72,8 @@ void Engine::start()
 
 	m_state = EngineState::RUNNING;
 
+	g_debugRenderManager.renderFps(true);
+
 	while(m_state == EngineState::RUNNING || m_state == EngineState::PAUSED)
 	{
 		while(updateTime > 1/60.0f)
@@ -83,6 +90,7 @@ void Engine::start()
 
 		if(frameCounterTime > 1.0f)
 		{
+			g_debugRenderManager.setFps(framesCounter / frameCounterTime);
 			std::cout<<"Frames/s : "<<framesCounter / frameCounterTime<<std::endl;
 			framesCounter = 0;
 			frameCounterTime--;
@@ -102,7 +110,12 @@ void Engine::update(float updateTime)
 
 void Engine::render()
 {
-	
+	g_renderManager.preRender();
+
+	g_renderManager.render();
+	g_debugRenderManager.render();
+
+	g_renderManager.postRender();
 }
 
 void Engine::onWindowClosed(IEventDataPtr event)
