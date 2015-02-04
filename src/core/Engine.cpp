@@ -91,7 +91,7 @@ void Engine::start()
 		if(frameCounterTime > 1.0f)
 		{
 			g_debugRenderManager.setFps(framesCounter / frameCounterTime);
-			std::cout<<"Frames/s : "<<framesCounter / frameCounterTime<<std::endl;
+			//std::cout<<"Frames/s : "<<framesCounter / frameCounterTime<<std::endl;
 			framesCounter = 0;
 			frameCounterTime--;
 		}

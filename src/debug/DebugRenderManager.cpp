@@ -10,7 +10,7 @@
 #include <string>
 
 DebugRenderManager::DebugRenderManager()
-	:m_defaultFont(NULL), m_fpsTextureId(0), m_isRenderFps(false),
+	:m_defaultFont(NULL), m_isRenderFps(false),
 	 m_isInitialised(false)
 {
 
@@ -74,7 +74,7 @@ bool DebugRenderManager::init()
 		m_fpsTextureTransform[0] = 0;
 
 	m_fpsTextureTransform[0] = m_fpsTextureTransform[5] = m_fpsTextureTransform[10] = m_fpsTextureTransform[15] = 1;
-	m_fpsTextureTransform[3] = m_fpsTextureTransform[7] = 0.5;
+	m_fpsTextureTransform[3] = m_fpsTextureTransform[7] = -1.0;
 	m_isInitialised = true;
 
 	return true;
@@ -141,11 +141,11 @@ bool DebugRenderManager::destroy()
 		return false;
 	}
 
+	m_fpsTexture.destroy();
+
 	glDeleteBuffers(1, &m_vboQuad);
 	glDeleteBuffers(1, &m_vboIndicesQuad);
 	glDeleteVertexArrays(1, &m_vaoQuad);
-
-	glDeleteTextures(1, &m_fpsTextureId);
 
 	TTF_CloseFont(m_defaultFont);
 	TTF_Quit();
@@ -165,24 +165,12 @@ void DebugRenderManager::setFps(float fps)
 	std::string fpsString = "FPS: ";
 	fpsString.append(std::to_string(fps));
 	SDL_Color color = {255,255,255};
-	SDL_Surface* surface = TTF_RenderUTF8_Blended(m_defaultFont, fpsString.c_str(), color);
 
-	glDeleteTextures(1, &m_fpsTextureId);
-	
-	glGenTextures(1, &m_fpsTextureId);
-	glBindTexture(GL_TEXTURE_2D, m_fpsTextureId);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
-    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0,
-    	GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
-    glBindTexture(GL_TEXTURE_2D,0);
+	m_fpsTexture.destroy();
+	m_fpsTexture.initFromText(fpsString.c_str(), m_defaultFont, color);
 
-    m_fpsTextureTransform[0] = surface->w / (float) Engine::g_renderManager.getWidth();
-    m_fpsTextureTransform[5] = (surface->h / (float) Engine::g_renderManager.getHeight());
-
-    SDL_FreeSurface(surface);
+	m_fpsTextureTransform[0] = m_fpsTexture.getWidth() / Engine::g_renderManager.getWidth();
+	m_fpsTextureTransform[5] = m_fpsTexture.getHeight() / Engine::g_renderManager.getHeight();
 }
 
 void DebugRenderManager::render()
@@ -192,14 +180,14 @@ void DebugRenderManager::render()
 	glUseProgram(m_defaultShader.getProgram());
 
 	//glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_fpsTextureId);
+	glBindTexture(GL_TEXTURE_2D, m_fpsTexture.getId());
 	glBindVertexArray(m_vaoQuad);
 	
 	int uniformModelView = glGetUniformLocation(m_defaultShader.getProgram(),
 							 "modelView_Matrix");
 	if(-1 != uniformModelView)
 	{
-		glUniformMatrix4fv(uniformModelView, 1, true, m_fpsTextureTransform);
+		glUniformMatrix4fv(uniformModelView, 1, false, m_fpsTextureTransform);
 
 		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // 3 indices starting at 0 -> 1 triangle
 	}

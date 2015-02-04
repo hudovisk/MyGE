@@ -3,7 +3,7 @@
 #define DEBUG_RENDER_MANAGER_H
 
 #include "render/Shader.h"
-
+#include "render/Texture.h"
 #include <SDL2/SDL_ttf.h>
 
 /**
@@ -30,7 +30,7 @@ private:
 	TTF_Font* m_defaultFont;
 	Shader m_defaultShader;
 
-	unsigned int m_fpsTextureId;
+	Texture m_fpsTexture;
 	float m_fpsTextureTransform[16];
 
 	unsigned int m_vaoQuad;
