@@ -15,6 +15,7 @@ include_directories(extra/)
 #sub-systems
 add_subdirectory(src/core)
 add_subdirectory(src/debug)
+#add_subdirectory(src/memory)
 add_subdirectory(src/events)
 add_subdirectory(src/render)
 

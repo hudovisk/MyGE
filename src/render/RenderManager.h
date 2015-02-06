@@ -3,6 +3,8 @@
 #define RENDER_ENGINE_H
 
 #include "events/Events.h"
+#include "render/Texture.h"
+#include "memory/ObjectPool.h"
 
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
@@ -43,6 +45,49 @@ public:
 	void postRender();
 
 	/**
+	 * @brief Initiale texture from image.
+	 * @details Unimplemented
+	 * 
+	 * @param imgPath The file path of the image.
+	 * @return A texture pointer, must be released by RenderManager.
+	 * 
+	 * @todo implement using SDL_Image
+	 */
+	Texture* createTextureFromImg(const char* imgPath);
+
+	/**
+	 * @brief Initialise texture from SDL_TTF font.
+	 * @details Utilise the TTF_RenderUTF8_Blended, (expensive).
+	 * 
+	 * @param text The text to be printed
+	 * @param font The TTF_Font.
+	 * @param color The color of the text, rgb.
+	 * 
+	 * @return A texture pointer, must be released by RenderManager.
+	 */
+	Texture* createTextureFromText(const char* text, TTF_Font* font, SDL_Color color);
+
+	/**
+	 * @brief Update texture from SDL_TTF font.
+	 * @details Utilise the TTF_RenderUTF8_Blended, (expensive).
+	 * 
+	 * @param texture The texture to be updated
+	 * @param text The text to be printed
+	 * @param font The TTF_Font.
+	 * @param color The color of the text, rgb.
+	 */
+	void updateTextureFromText(Texture* texture, 
+		const char* text, TTF_Font* font, SDL_Color color);
+
+	/**
+	 * @brief Releases the texture pointer.
+	 * @details  Just wrappes ObjectPool release and deletes the texture cache from OpenGL.
+	 * 
+	 * @param texture The texture pointer to be released.
+	 */
+	void releaseTexture(Texture* texture);
+
+	/**
 	 * @brief Callback for WindowResize event.
 	 *  
 	 * @param event event should be cast to WindowResizedEventData where the new width and height can be retrieved
@@ -63,6 +108,8 @@ private:
 	SDL_GLContext m_glContext;
 
 	int m_width, m_height;
+
+	ObjectPool<Texture> m_texturesPool;
 
 	//static unsigned int NEXT_RENDER_COMPONENT_ID;
 	//std::vector<RenderComponentPtr> m_renderComponents;

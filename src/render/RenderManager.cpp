@@ -1,6 +1,7 @@
 
 #include "render/RenderManager.h"
 #include "debug/Logger.h"
+#include "debug/MyAssert.h"
 #include "core/Engine.h"
 
 //UI32 RenderManager::NEXT_RENDER_COMPONENT_ID = 1;
@@ -14,6 +15,9 @@ bool RenderManager::init(int width, int height)
 		return false;
 
 	if(!initGL())
+		return false;
+
+	if(!m_texturesPool.init(10))
 		return false;
 
 	WindowResizedEventData windowResizedEventData;
@@ -112,6 +116,70 @@ void RenderManager::postRender()
 	SDL_GL_SwapWindow(m_window);
 
 	glPopAttrib();
+}
+
+Texture* RenderManager::createTextureFromImg(const char* imgPath)
+{
+	ASSERT(true, "Unimplemented method call: RenderManager.createTextureFromImg");
+	return false;
+}
+
+void RenderManager::updateTextureFromText(Texture* texture,
+ const char* text, TTF_Font* font, SDL_Color color)
+{
+	SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text, color);
+
+	glBindTexture(GL_TEXTURE_2D, texture->m_id);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0,
+    	GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+    glBindTexture(GL_TEXTURE_2D,0);
+
+    texture->m_width = surface->w;
+    texture->m_height = surface->h;
+
+    SDL_FreeSurface(surface);
+
+    texture->m_isInitialised = true;
+}
+
+Texture* RenderManager::createTextureFromText(const char* text, TTF_Font* font, SDL_Color color)
+{
+	Texture* texture = m_texturesPool.create();
+
+	SDL_Surface* surface = TTF_RenderUTF8_Blended(font, text, color);
+
+	glGenTextures(1, &texture->m_id);
+	glBindTexture(GL_TEXTURE_2D, texture->m_id);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, surface->w, surface->h, 0,
+    	GL_RGBA, GL_UNSIGNED_BYTE, surface->pixels);
+    glBindTexture(GL_TEXTURE_2D,0);
+
+    texture->m_width = surface->w;
+    texture->m_height = surface->h;
+
+    SDL_FreeSurface(surface);
+
+    texture->m_isInitialised = true;
+
+    return texture;
+}
+
+void RenderManager::releaseTexture(Texture* texture)
+{
+	if(texture->m_isInitialised)
+	{
+		glDeleteTextures(1, &texture->m_id);
+		texture->m_isInitialised = false;	
+	}
+	m_texturesPool.release(texture);
 }
 
 void RenderManager::onWindowResize(IEventDataPtr e)

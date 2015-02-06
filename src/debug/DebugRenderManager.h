@@ -30,7 +30,7 @@ private:
 	TTF_Font* m_defaultFont;
 	Shader m_defaultShader;
 
-	Texture m_fpsTexture;
+	Texture* m_fpsTexture;
 	float m_fpsTextureTransform[16];
 
 	unsigned int m_vaoQuad;

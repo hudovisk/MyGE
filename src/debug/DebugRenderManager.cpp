@@ -67,13 +67,19 @@ bool DebugRenderManager::init()
 		LOG(ERROR, "Default DebugRender shader could not initialise.");
 		return false;
 	}
+	SDL_Color color = {255,255,255};
+	m_fpsTexture = Engine::g_renderManager.createTextureFromText("FPS: 0.0",
+	 m_defaultFont, color);
 
 	initQuad();
 
 	for(int i=0; i<16; i++)
 		m_fpsTextureTransform[0] = 0;
 
-	m_fpsTextureTransform[0] = m_fpsTextureTransform[5] = m_fpsTextureTransform[10] = m_fpsTextureTransform[15] = 1;
+	m_fpsTextureTransform[0] = m_fpsTexture->m_width / Engine::g_renderManager.getWidth();
+	m_fpsTextureTransform[5] = m_fpsTexture->m_height / Engine::g_renderManager.getHeight();
+
+	m_fpsTextureTransform[10] = m_fpsTextureTransform[15] = 1;
 	m_fpsTextureTransform[3] = m_fpsTextureTransform[7] = -1.0;
 	m_isInitialised = true;
 
@@ -141,7 +147,7 @@ bool DebugRenderManager::destroy()
 		return false;
 	}
 
-	m_fpsTexture.destroy();
+	Engine::g_renderManager.releaseTexture(m_fpsTexture);
 
 	glDeleteBuffers(1, &m_vboQuad);
 	glDeleteBuffers(1, &m_vboIndicesQuad);
@@ -166,11 +172,12 @@ void DebugRenderManager::setFps(float fps)
 	fpsString.append(std::to_string(fps));
 	SDL_Color color = {255,255,255};
 
-	m_fpsTexture.destroy();
-	m_fpsTexture.initFromText(fpsString.c_str(), m_defaultFont, color);
+	// Engine::g_renderManager.releaseTexture(m_fpsTexture);
+	Engine::g_renderManager.updateTextureFromText(m_fpsTexture,
+	 fpsString.c_str(), m_defaultFont, color);
 
-	m_fpsTextureTransform[0] = m_fpsTexture.getWidth() / Engine::g_renderManager.getWidth();
-	m_fpsTextureTransform[5] = m_fpsTexture.getHeight() / Engine::g_renderManager.getHeight();
+	m_fpsTextureTransform[0] = m_fpsTexture->m_width / Engine::g_renderManager.getWidth();
+	m_fpsTextureTransform[5] = m_fpsTexture->m_height / Engine::g_renderManager.getHeight();
 }
 
 void DebugRenderManager::render()
@@ -180,7 +187,7 @@ void DebugRenderManager::render()
 	glUseProgram(m_defaultShader.getProgram());
 
 	//glActiveTexture(GL_TEXTURE0);
-	glBindTexture(GL_TEXTURE_2D, m_fpsTexture.getId());
+	glBindTexture(GL_TEXTURE_2D, m_fpsTexture->m_id);
 	glBindVertexArray(m_vaoQuad);
 	
 	int uniformModelView = glGetUniformLocation(m_defaultShader.getProgram(),
