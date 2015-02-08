@@ -1,5 +1,5 @@
 set(render_source_files RenderManager.cpp Shader.cpp )
-set(render_header_files RenderManager.h Shader.h Texture.h)
+set(render_header_files RenderManager.h Shader.h Texture.h Geometric.h)
 
 add_library(render ${render_source_files} ${render_header_files})
 

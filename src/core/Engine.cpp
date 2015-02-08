@@ -3,6 +3,7 @@
 
 #include "debug/Logger.h"
 #include "core/System.h"
+#include "core/GameObjectFactory.h"
 
 #include <iostream>
 
@@ -64,6 +65,9 @@ bool Engine::init()
 
 void Engine::start()
 {
+	std::vector<Geometric*> mesh;
+	GameObjectFactory::loadMesh("res/models/crytek-sponza/sponza.obj", mesh);
+
 	float lastTime = System::getHighResTime();
 	float currentTime = lastTime;
 	float updateTime = 0;

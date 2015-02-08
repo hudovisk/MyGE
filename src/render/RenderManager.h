@@ -4,6 +4,8 @@
 
 #include "events/Events.h"
 #include "render/Texture.h"
+#include "render/Geometric.h"
+#include "render/Shader.h"
 #include "memory/ObjectPool.h"
 
 #include <SDL2/SDL.h>
@@ -88,6 +90,25 @@ public:
 	void releaseTexture(Texture* texture);
 
 	/**
+	 * @brief Initialise a Geometric object.
+	 * @details Utilises the assimp library to open the file and extract all geometric information.
+	 * 
+	 * @param filePath the Path of the file.
+	 * @return Geometric object initialised.
+	 */
+	Geometric* createGeometric(const std::vector<Vertex> vertices,
+	const std::vector<unsigned int>& indices);
+
+	/**
+	 * @brief Releases the geometric pointer.
+	 * @details  Just wrappes ObjectPool release and deletes the geometric cache from OpenGL.
+	 * 
+	 * @param texture The geometric pointer to be released.
+	 */
+	void releaseGeometric(Geometric* geometric);
+
+
+	/**
 	 * @brief Callback for WindowResize event.
 	 *  
 	 * @param event event should be cast to WindowResizedEventData where the new width and height can be retrieved
@@ -103,13 +124,18 @@ private:
 	bool initSDL();
 	bool initGL();
 
+	void initMesh(std::vector<Vertex>& vertices);
+
 	SDL_Window* m_window;
 	SDL_Surface* m_screenSurface;
 	SDL_GLContext m_glContext;
 
 	int m_width, m_height;
 
+	Shader m_defaultShader;
+
 	ObjectPool<Texture> m_texturesPool;
+	ObjectPool<Geometric> m_geometricPool;
 
 	//static unsigned int NEXT_RENDER_COMPONENT_ID;
 	//std::vector<RenderComponentPtr> m_renderComponents;

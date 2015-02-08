@@ -4,6 +4,8 @@
 #include "debug/MyAssert.h"
 #include "core/Engine.h"
 
+#include <iostream>
+
 //UI32 RenderManager::NEXT_RENDER_COMPONENT_ID = 1;
 
 bool RenderManager::init(int width, int height)
@@ -19,6 +21,16 @@ bool RenderManager::init(int width, int height)
 
 	if(!m_texturesPool.init(10))
 		return false;
+
+	if(!m_geometricPool.init(1000))
+		return false;
+
+	if(!m_defaultShader.init("res/shaders/vertex.glsl", 
+		"res/shaders/fragment.glsl"))
+	{
+		LOG(ERROR, "Default RenderManager shader could not initialise.");
+		return false;
+	}
 
 	WindowResizedEventData windowResizedEventData;
 	Engine::g_eventManager.addListenner(
@@ -107,7 +119,19 @@ void RenderManager::preRender()
 
 void RenderManager::render()
 {
+	Geometric** geometric = m_geometricPool.getUsedBufferCache();
+	unsigned int numGeometrics = m_geometricPool.getUsedSize();
 
+	glUseProgram(m_defaultShader.getProgram());
+
+	for(unsigned int i=0; i<numGeometrics; i++)
+	{
+		if(!geometric[i]->m_isInitialised)
+			continue;
+
+		glBindVertexArray(geometric[i]->m_vao);
+		glDrawElements(GL_TRIANGLES, geometric[i]->m_numIndices, GL_UNSIGNED_INT, 0);
+	}
 }
 
 void RenderManager::postRender()
@@ -121,7 +145,7 @@ void RenderManager::postRender()
 Texture* RenderManager::createTextureFromImg(const char* imgPath)
 {
 	ASSERT(true, "Unimplemented method call: RenderManager.createTextureFromImg");
-	return false;
+	return nullptr;
 }
 
 void RenderManager::updateTextureFromText(Texture* texture,
@@ -180,6 +204,77 @@ void RenderManager::releaseTexture(Texture* texture)
 		texture->m_isInitialised = false;	
 	}
 	m_texturesPool.release(texture);
+}
+
+Geometric* RenderManager::createGeometric(const std::vector<Vertex> vertices,
+	const std::vector<unsigned int>& indices)
+{
+	Geometric* geometric = m_geometricPool.create();
+
+	glGenVertexArrays(1, &geometric->m_vao);
+	glBindVertexArray(geometric->m_vao);
+
+	//initialise vertex buffer
+	glGenBuffers(1,&geometric->m_vbo);
+	glBindBuffer(GL_ARRAY_BUFFER, geometric->m_vbo);
+	glBufferData(GL_ARRAY_BUFFER, 
+							vertices.size() * sizeof(Vertex),
+							&vertices[0], GL_STATIC_DRAW);
+
+	glEnableVertexAttribArray(0); //position
+	glEnableVertexAttribArray(1); //normals
+	glEnableVertexAttribArray(2); //texture uv
+
+	glVertexAttribPointer(
+			0,                  	// attribute 0.
+			3,										// size
+			GL_FLOAT,           	// type
+			GL_FALSE,           	// normalized?
+			sizeof(Vertex),    		// stride
+			(void*)0            	// array buffer offset
+	);
+	glVertexAttribPointer(
+			1,                  	// attribute 1.
+			3,										// size
+			GL_FLOAT,           	// type
+			GL_FALSE,           	// normalized?
+			sizeof(Vertex),    		// stride
+			(void*)12            	// array buffer offset
+	);
+	glVertexAttribPointer(
+			2,                  	// attribute 2.
+			2,										// size
+			GL_FLOAT,           	// type
+			GL_FALSE,           	// normalized?
+			sizeof(Vertex),    		// stride
+			(void*)24            	// array buffer offset
+	);
+
+	glGenBuffers(1, &geometric->m_vboIndices);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geometric->m_vboIndices);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 
+							indices.size() * sizeof(unsigned int),
+							&indices[0], GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
+
+	geometric->m_numIndices = indices.size();
+	geometric->m_isInitialised = true;
+
+	return geometric;
+}
+
+void RenderManager::releaseGeometric(Geometric* geometric)
+{
+	if(geometric->m_isInitialised)
+	{
+		glDeleteBuffers(1, &geometric->m_vbo);
+		glDeleteBuffers(1, &geometric->m_vboIndices);
+		glDeleteVertexArrays(1, &geometric->m_vao);
+		geometric->m_isInitialised = false;
+	}
+
+	m_geometricPool.release(geometric);
 }
 
 void RenderManager::onWindowResize(IEventDataPtr e)

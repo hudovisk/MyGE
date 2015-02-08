@@ -21,7 +21,8 @@ public:
  * @details For each new event type, it must derive from this class and implement the getType method. Which must return 
  * a diferent number of any other type
  * 
- * @todo An easier way to create new event types, without looking for all the other events before choosing a value for type.
+ * @todo An easier way to create new event types, without looking for all the other events before choosing a value for type,
+ * 	Should look at Modern C++ Design by Andrei Alexandrescu for a solution.
  */
 class BaseEventData : public IEventData
 {
