@@ -4,6 +4,8 @@
 #include "debug/MyAssert.h"
 #include "core/Engine.h"
 
+#include "core/Camera.h"
+
 #include <iostream>
 
 //UI32 RenderManager::NEXT_RENDER_COMPONENT_ID = 1;
@@ -117,21 +119,25 @@ void RenderManager::preRender()
 	             GL_TEXTURE_BIT      | GL_TRANSFORM_BIT | GL_VIEWPORT_BIT);
 }
 
-void RenderManager::render()
+
+void RenderManager::bindDefaultShader()
 {
-	Geometric** geometric = m_geometricPool.getUsedBufferCache();
-	unsigned int numGeometrics = m_geometricPool.getUsedSize();
-
 	glUseProgram(m_defaultShader.getProgram());
+}
 
-	for(unsigned int i=0; i<numGeometrics; i++)
-	{
-		if(!geometric[i]->m_isInitialised)
-			continue;
+void RenderManager::setMatrixUniform(const char* uniformName, const Matrix4& value)
+{
+	int uniformId = glGetUniformLocation(m_defaultShader.getProgram(), uniformName);
+	glUniformMatrix4fv(uniformId, 1, true, value.m_data);
+}
 
-		glBindVertexArray(geometric[i]->m_vao);
-		glDrawElements(GL_TRIANGLES, geometric[i]->m_numIndices, GL_UNSIGNED_INT, 0);
-	}
+void RenderManager::render(Geometric* geometric)
+{
+	if(!geometric->m_isInitialised)
+		return;
+
+	glBindVertexArray(geometric->m_vao);
+	glDrawElements(GL_TRIANGLES, geometric->m_numIndices, GL_UNSIGNED_INT, 0);
 }
 
 void RenderManager::postRender()

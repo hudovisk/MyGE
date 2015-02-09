@@ -3,13 +3,13 @@
 
 #include "debug/Logger.h"
 #include "core/System.h"
-#include "core/GameObjectFactory.h"
 
 #include <iostream>
 
 EventManager Engine::g_eventManager;
 RenderManager Engine::g_renderManager;
 DebugRenderManager Engine::g_debugRenderManager;
+EntityManager Engine::g_entityManager;
 
 Engine::Engine()
 	: m_state(EngineState::NOT_STARTED), m_initialised(false)
@@ -24,6 +24,7 @@ Engine::~Engine()
 
 bool Engine::destroy()
 {  
+	g_entityManager.destroy();
 	g_debugRenderManager.destroy();
 	g_renderManager.destroy();
 	g_eventManager.destroy();
@@ -53,10 +54,18 @@ bool Engine::init()
 	if(!g_debugRenderManager.init())
 		return false;
 
+	if(!g_entityManager.init())
+		return false;
+
 	LOG(INFO, "Engine initialised");
 
 	g_eventManager.addListenner(EventListenerDelegate::from_method<Engine,&Engine::onWindowClosed>(this),
 															(new WindowClosedEventData)->getType());
+
+	m_updateStageEvent = std::make_shared<UpdateStageEventData>(0);
+	m_preRenderStageEvent = std::make_shared<PreRenderStageEventData>(0);
+	m_renderStageEvent = std::make_shared<RenderStageEventData>(0);
+	m_postRenderStageEvent = std::make_shared<PostRenderStageEventData>(0);
 
 	m_initialised = true;
 
@@ -65,9 +74,7 @@ bool Engine::init()
 
 void Engine::start()
 {
-	std::vector<Geometric*> mesh;
-	GameObjectFactory::loadMesh("res/models/crytek-sponza/sponza.obj", mesh);
-
+	g_entityManager.loadEntity("res/models/monkey.obj");
 	float lastTime = System::getHighResTime();
 	float currentTime = lastTime;
 	float updateTime = 0;
@@ -109,17 +116,20 @@ void Engine::start()
 
 void Engine::update(float updateTime)
 {
-	
+	g_eventManager.triggerEvent(m_updateStageEvent);
 }
 
 void Engine::render()
 {
+	g_eventManager.triggerEvent(m_preRenderStageEvent);
 	g_renderManager.preRender();
 
-	g_renderManager.render();
+	g_eventManager.triggerEvent(m_renderStageEvent);
+	// g_renderManager.render(meshes);
 	g_debugRenderManager.render();
 
 	g_renderManager.postRender();
+	g_eventManager.triggerEvent(m_postRenderStageEvent);
 }
 
 void Engine::onWindowClosed(IEventDataPtr event)

@@ -1,3 +1,10 @@
+/*
+ * Vec3.cpp
+ *
+ *  Created on: Apr 3, 2014
+ *      Author: hudo
+ */
+
 #include <cmath>
 #include <utility>
 
@@ -112,6 +119,11 @@ Vec3::Vec3(const Vec3& v)
 	m_data[0] = v.m_data[0];
 	m_data[1] = v.m_data[1];
 	m_data[2] = v.m_data[2];
+}
+
+Vec3::Vec3(Vec3&& v)
+{
+	std::swap(m_data,v.m_data);
 }
 
 Vec3::~Vec3()

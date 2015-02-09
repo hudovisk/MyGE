@@ -99,4 +99,64 @@ public:
 //	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
 };
 
+class UpdateStageEventData : public BaseEventData
+{
+public:
+	UpdateStageEventData(const float timeStamp = 0.0f) :
+		BaseEventData(timeStamp)
+	{
+
+	}
+
+	//must be a diferent number!!
+	const unsigned int getType() const { return 4; }
+
+//	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
+};
+
+class PreRenderStageEventData : public BaseEventData
+{
+public:
+	PreRenderStageEventData(const float timeStamp = 0.0f) :
+		BaseEventData(timeStamp)
+	{
+
+	}
+
+	//must be a diferent number!!
+	const unsigned int getType() const { return 5; }
+	
+//	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
+};
+
+class RenderStageEventData : public BaseEventData
+{
+public:
+	RenderStageEventData(const float timeStamp = 0.0f) :
+		BaseEventData(timeStamp)
+	{
+
+	}
+
+	//must be a diferent number!!
+	const unsigned int getType() const { return 6; }
+	
+//	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
+};
+
+class PostRenderStageEventData : public BaseEventData
+{
+public:
+	PostRenderStageEventData(const float timeStamp = 0.0f) :
+		BaseEventData(timeStamp)
+	{
+
+	}
+
+	//must be a diferent number!!
+	const unsigned int getType() const { return 7; }
+	
+//	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
+};
+
 #endif

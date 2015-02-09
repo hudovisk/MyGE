@@ -3,7 +3,6 @@
 #define GEOMETRIC_H
 
 #include "render/Texture.h"
-
 #include "math/Vec3.h"
 
 struct Vertex

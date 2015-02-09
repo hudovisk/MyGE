@@ -1,5 +1,11 @@
-#ifndef VEC3_H
-#define VEC3_H
+/*
+ * Vec3.h
+ *
+ *  Created on: Apr 3, 2014
+ *      Author: hudo
+ */
+
+#pragma once
 
 class Vec3
 {
@@ -26,9 +32,8 @@ public:
 	Vec3(float x, float y, float z);
 	Vec3();
 	Vec3(const Vec3& v);
+	Vec3(Vec3&& v);
 	~Vec3();
 };
 
 Vec3 operator*(const float lhs, const Vec3& rhs);
-
-#endif //VEC3_H

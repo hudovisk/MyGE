@@ -166,12 +166,12 @@ bool EventManager::triggerEvent(const IEventDataPtr event) const
 		for(auto itDelegates = delegates.begin(); itDelegates != delegates.end(); itDelegates++)
 		{
 			(*itDelegates)(event);
-			LOG(INFO, "Event triggered type =  "<<event->getType());
+			// LOG(INFO, "Event triggered type =  "<<event->getType());
 		}
 		//LOG(INFO, "Event triggered type =  "<<event->getType());
 		return true;
 	}
-	LOG(WARN, "Fail to trigger event type =  "<<event->getType());
+	// LOG(WARN, "Fail to trigger event type =  "<<event->getType());
 	return false;
 }
 
@@ -184,7 +184,7 @@ bool EventManager::queueEvent(const IEventDataPtr event)
 		LOG(INFO, "Event queued type =  "<<event->getType());
 		return true;
 	}
-	LOG(WARN, "Fail to queue event type =  "<<event->getType());
+	// LOG(WARN, "Fail to queue event type =  "<<event->getType());
 	return false;
 }
 

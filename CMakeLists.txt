@@ -13,6 +13,7 @@ include_directories(src/)
 include_directories(extra/)
 
 #sub-systems
+add_subdirectory(src/systems)
 add_subdirectory(src/math)
 add_subdirectory(src/core)
 add_subdirectory(src/debug)

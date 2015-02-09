@@ -4,6 +4,7 @@
 #include "events/EventManager.h"
 #include "render/RenderManager.h"
 #include "debug/DebugRenderManager.h"
+#include "core/EntityManager.h"
 /**
  * @brief EngineState enum
  * @details Represents the possible states the engine can be.
@@ -15,6 +16,14 @@ enum class EngineState
 	RUNNING,
 	PAUSED,
 	EXITED,
+};
+
+enum class UpdateStage
+{
+	UPDATE,
+	PRE_RENDER,
+	RENDER,
+	POST_RENDER,
 };
 
 /**
@@ -66,12 +75,19 @@ public:
 	static EventManager g_eventManager;
 	static RenderManager g_renderManager;
 	static DebugRenderManager g_debugRenderManager;
+	static EntityManager g_entityManager;
 
 private:
 	void update(float updateTime);
 	void render();
 
 	EngineState m_state;
+
+	IEventDataPtr m_updateStageEvent;
+	IEventDataPtr m_preRenderStageEvent;
+	IEventDataPtr m_renderStageEvent;
+	IEventDataPtr m_postRenderStageEvent;
+
 
 	bool m_initialised;
 };

@@ -3,4 +3,4 @@ set(render_header_files RenderManager.h Shader.h Texture.h Geometric.h)
 
 add_library(render ${render_source_files} ${render_header_files})
 
-target_link_libraries(render my_debug SDL2 GL GLU GLEW)
+target_link_libraries(render core my_debug SDL2 GL GLU GLEW)

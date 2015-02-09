@@ -6,7 +6,10 @@
 #include "render/Texture.h"
 #include "render/Geometric.h"
 #include "render/Shader.h"
+
 #include "memory/ObjectPool.h"
+
+#include "math/Matrix4.h"
 
 #include <SDL2/SDL.h>
 #include <GL/glew.h>
@@ -43,8 +46,13 @@ public:
 	bool destroy();
 
 	void preRender();
-	void render();
+	void render(Geometric* geometric);
 	void postRender();
+
+	void bindDefaultShader();
+	// void BindShader(Shader shader);
+
+	void setMatrixUniform(const char* uniformName, const Matrix4& value);
 
 	/**
 	 * @brief Initiale texture from image.
@@ -123,8 +131,6 @@ public:
 private:
 	bool initSDL();
 	bool initGL();
-
-	void initMesh(std::vector<Vertex>& vertices);
 
 	SDL_Window* m_window;
 	SDL_Surface* m_screenSurface;
