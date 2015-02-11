@@ -32,6 +32,8 @@ protected:
 	EntityHandler m_entity;
 };
 
+///////////////////////////////////////////////////////////////////////////////////////
+
 class GetTransformMessage : public IMessageData
 {
 public:
@@ -45,6 +47,35 @@ public:
 
 private:
 	Transform* m_transform;
+};
+
+///////////////////////////////////////////////////////////////////////////////////////
+
+class PlayerInputMessage : public IMessageData
+{
+public:
+	PlayerInputMessage() { }
+	~PlayerInputMessage() { }
+
+	const unsigned int getType() const { return 1; }
+
+	int getId() const { return m_id; }
+	void setId(int id) { m_id = id; }
+
+	float getInputValue() const { return m_value; }
+	float getInputX() const { return m_pos[0]; }
+	float getInputY() const { return m_pos[1]; }
+
+	void setInputValue(float value) { m_value = value; }
+	void setInputX(float value) { m_pos[0] = value; }
+	void setInputY(float value) { m_pos[1] = value; }
+private:
+	int m_id;
+	union
+	{
+		float m_value;
+		float m_pos[2];
+	};
 };
 
 #endif

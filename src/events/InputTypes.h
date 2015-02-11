@@ -22,6 +22,18 @@ enum MouseCode
 	MOUSE_WHEEL_DOWN,
 };
 
+class MouseMapAttributes
+{
+public:
+	unsigned int m_mouseCode;
+	unsigned int m_messageId;
+	bool m_invertedX;
+	bool m_relativeX;
+	bool m_relativeY;
+	bool m_invertedY;
+	bool m_pressed;
+};
+
 class KeyboardEvent
 {
 public:

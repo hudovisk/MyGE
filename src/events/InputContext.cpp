@@ -230,15 +230,18 @@ std::vector<InputMessage> InputContext::parse(std::list<InputEvent>& input)
  				if(itFind != m_mouseMap.end())
  				{
 //					bool handled = false;
-					for(auto itAtributes = itFind->second.begin(); itAtributes != itFind->second.end(); itAtributes++)
+					for(auto itAtributes = itFind->second.begin(); 
+						itAtributes != itFind->second.end(); itAtributes++)
 					{
 						MouseMapAttributes mouseAttributes = *itAtributes;
 						if(itInput->m_mouse.m_pressed == mouseAttributes.m_pressed)
 						{
 							InputMessage message;
 							message.id = mouseAttributes.m_messageId;
-							int posX = (mouseAttributes.m_relativeX) ? itInput->m_mouse.m_relX : itInput->m_mouse.m_posX;
-							int posY = (mouseAttributes.m_relativeY) ? itInput->m_mouse.m_relY : itInput->m_mouse.m_posY;
+							int posX = (mouseAttributes.m_relativeX) 
+								? itInput->m_mouse.m_relX : itInput->m_mouse.m_posX;
+							int posY = (mouseAttributes.m_relativeY) 
+								? itInput->m_mouse.m_relY : itInput->m_mouse.m_posY;
 							message.pos[0] = (mouseAttributes.m_invertedX) ? -posX : posX;
 							message.pos[1] = (mouseAttributes.m_invertedY) ? -posY : posY;
 							messages.push_back(message);
