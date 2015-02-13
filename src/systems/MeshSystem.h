@@ -2,14 +2,13 @@
 #ifndef MESH_COMPONENT_H
 #define MESH_COMPONENT_H
 
-#include "systems/Component.h"
+#include "systems/System.h"
 #include "render/Geometric.h"
 #include "memory/ObjectPool.h"
 #include "events/Events.h"
 
 #include <vector>
 
-class EntityManager;
 class MeshSystem;
 
 class MeshComponent : public Component
@@ -18,19 +17,13 @@ public:
 	MeshComponent() { }
 	virtual ~MeshComponent() { }
 
-	// void receiveMessage(IMessageDataPtr message)
-	// {
-	// 	system->receiveMessage(message);
-	// }
-
 private:
 	friend class MeshSystem;
 	
 	std::vector<Geometric*> m_geometrics;	
-	// MeshSystem* m_system;
 };
 
-class MeshSystem
+class MeshSystem : public System
 {
 public:
 	MeshSystem();
@@ -41,17 +34,15 @@ public:
 
 	void onUpdate(IEventDataPtr e);
 
-	// void receiveMessage(IMessageDataPtr message);
+	Component* create();
+	Component* createFromJSON(const char* json);
 
-	MeshComponent* createMesh();
-	MeshComponent* createMeshFromFile(const char* filePath);
-
-	void releaseMesh(MeshComponent* mesh);
+	void release(Component* mesh);
 private:
-	ObjectPool<MeshComponent> m_meshPool;
-	std::shared_ptr<GetTransformMessage> m_getTransformMsg;
-
 	bool m_isInitialised;
+
+	ObjectPool<MeshComponent> m_componentPool;
+	std::shared_ptr<GetTransformMessage> m_getTransformMsg;
 };
 
 #endif

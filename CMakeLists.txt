@@ -2,7 +2,7 @@ cmake_minimum_required (VERSION 2.6)
 
 project (MyGE)
 
-set(CMAKE_CXX_FLAGS "-Wall -std=c++11")
+set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -g2")
 
 #VERSION
 set (${PROJECT_NAME}_VERSION_MAJOR 0)

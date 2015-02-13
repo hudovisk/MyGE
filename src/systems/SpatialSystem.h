@@ -2,7 +2,7 @@
 #ifndef SPATIAL_SYSTEM_H
 #define SPATIAL_SYSTEM_H
 
-#include "systems/Component.h"
+#include "systems/System.h"
 #include "memory/ObjectPool.h"
 #include "math/Transform.h"
 
@@ -23,7 +23,7 @@ private:
 	Transform m_transform;	
 };
 
-class SpatialSystem
+class SpatialSystem : public System
 {
 public:
 	SpatialSystem();
@@ -34,15 +34,16 @@ public:
 
 	void receiveMessage(SpatialComponent* component, IMessageDataPtr message);
 
-	SpatialComponent* createSpatial();
+	Component* create();
+	Component* createFromJSON(const char* json);
 
-	void releaseSpatial(SpatialComponent* spatial);
+	void release(Component* spatial);
 
 private:
-	ObjectPool<SpatialComponent> m_spatialPool;
-	std::shared_ptr<GetTransformMessage> m_getTransformMsg;
-
 	bool m_isInitialised;	
+	
+	ObjectPool<SpatialComponent> m_componentPool;
+	std::shared_ptr<GetTransformMessage> m_getTransformMsg;
 };
 
 #endif

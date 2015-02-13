@@ -2,11 +2,11 @@
 #ifndef ENTITY_MANAGER_H
 #define ENTITY_MANAGER_H
 
-#include "systems/MeshSystem.h"
-#include "systems/SpatialSystem.h"
-#include "systems/Component.h"
+#include "systems/System.h"
+
 #include "core/Messages.h"
 
+#include <string>
 #include <map>
 
 typedef unsigned int EntityHandler;
@@ -25,12 +25,11 @@ public:
 	void sendMessage(IMessageDataPtr message);
 
 private:
-	MeshSystem m_meshSystem;
-	SpatialSystem m_spatialSystem;
-
 	bool m_isInitialised;
 
-	std::map<EntityHandler, std::map<ComponentType, Component*>> m_entities;
+	std::map<std::string, System*> m_systems;
+
+	std::map<EntityHandler, std::map<std::string, Component*>> m_entities;
 	static unsigned int NEXT_ID;
 };
 

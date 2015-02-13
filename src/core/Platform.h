@@ -1,13 +1,13 @@
 
-#ifndef SYSTEM_H
-#define SYSTEM_H
+#ifndef PLATFORM_H
+#define PLATFORM_H
 
 /**
  * @brief Platform especific methods.
  * @details For now, this class is reponsible for intialise SDL and use it for aquire time.
  * Its a layer of abstraction for SDL.
  */
-class System
+class Platform
 {
 public:
 	/**
@@ -42,4 +42,4 @@ public:
 
 };
 
-#endif
+#endif //PLATFORM_H

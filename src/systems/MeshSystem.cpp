@@ -27,9 +27,9 @@ bool MeshSystem::init()
 	if(m_isInitialised)
 		return false;
 
-	if(!m_meshPool.init(100))
+	if(!m_componentPool.init(100))
 	{
-		LOG(ERROR, "Couldnt initialise m_meshPool with 100 objects.");
+		LOG(ERROR, "Couldnt initialise m_componentPool with 100 objects.");
 		return false;
 	}
 
@@ -49,7 +49,7 @@ bool MeshSystem::destroy()
 {
 	if(m_isInitialised)
 	{
-		m_meshPool.destroy();
+		m_componentPool.destroy();
 
 		m_isInitialised = false;
 	}
@@ -58,8 +58,8 @@ bool MeshSystem::destroy()
 
 void MeshSystem::onUpdate(IEventDataPtr e)
 {
-	MeshComponent** meshes = m_meshPool.getUsedBufferCache();
-	unsigned int numMeshes = m_meshPool.getUsedSize();
+	MeshComponent** meshes = m_componentPool.getUsedBufferCache();
+	unsigned int numMeshes = m_componentPool.getUsedSize();
 
 	for(unsigned int i=0; i<numMeshes; i++)
 	{
@@ -85,23 +85,23 @@ void MeshSystem::onUpdate(IEventDataPtr e)
 	}
 }
 
-MeshComponent* MeshSystem::createMesh()
+Component* MeshSystem::create()
 {
-	MeshComponent* mesh = m_meshPool.create();
+	MeshComponent* mesh = m_componentPool.create();
 	return mesh;
 }
 
-MeshComponent* MeshSystem::createMeshFromFile(const char* filePath)
+Component* MeshSystem::createFromJSON(const char* json)
 {
-	MeshComponent* mesh = m_meshPool.create();
+	MeshComponent* mesh = m_componentPool.create();
 
 	Assimp::Importer importer;
-	const aiScene *scene = importer.ReadFile(filePath, 
+	const aiScene *scene = importer.ReadFile(json, 
 		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 	
 	if(!scene)
 	{
-		LOG(ERROR, "Error importing: "<<filePath<<". "<<importer.GetErrorString());
+		LOG(ERROR, "Error importing: "<<json<<". "<<importer.GetErrorString());
 		return mesh;
 	}
 
@@ -120,14 +120,16 @@ MeshComponent* MeshSystem::createMeshFromFile(const char* filePath)
 	return mesh;
 }
 
-void MeshSystem::releaseMesh(MeshComponent* mesh)
+void MeshSystem::release(Component* component)
 {
+	LOG(INFO, "MeshSystem release");
+	MeshComponent* mesh = dynamic_cast<MeshComponent*>(component);
 	for(unsigned int i=0; i<mesh->m_geometrics.size(); i++)
 	{
 		Engine::g_renderManager.releaseGeometric(mesh->m_geometrics[i]);
 	}
 
-	m_meshPool.release(mesh);
+	m_componentPool.release(mesh);
 }
 
 void getVerticesAndIndices(std::vector<Vertex>& vertices, 

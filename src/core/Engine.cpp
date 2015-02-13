@@ -2,7 +2,7 @@
 #include "core/Engine.h"
 
 #include "debug/Logger.h"
-#include "core/System.h"
+#include "core/Platform.h"
 
 #include <iostream>
 
@@ -24,12 +24,17 @@ Engine::~Engine()
 
 bool Engine::destroy()
 {  
-	g_entityManager.destroy();
-	g_debugRenderManager.destroy();
-	g_renderManager.destroy();
-	g_eventManager.destroy();
-	System::destroy();
-	Logger::destroy();
+	if(m_initialised)
+	{
+		g_entityManager.destroy();
+		g_debugRenderManager.destroy();
+		g_renderManager.destroy();
+		g_eventManager.destroy();
+		Platform::destroy();
+		Logger::destroy();
+
+		m_initialised = false;
+	}	
 
 	return true;
 }
@@ -42,7 +47,7 @@ bool Engine::init()
 	if(!Logger::init("Log.txt", ALL))
 		return false;
 
-	if(!System::init())
+	if(!Platform::init())
 		return false;
 
 	if(!g_eventManager.init())
@@ -75,7 +80,7 @@ bool Engine::init()
 void Engine::start()
 {
 	g_entityManager.loadEntity("res/models/monkey.obj");
-	float lastTime = System::getHighResTime();
+	float lastTime = Platform::getHighResTime();
 	float currentTime = lastTime;
 	float updateTime = 0;
 	float frameCounterTime = 0;
@@ -107,7 +112,7 @@ void Engine::start()
 			frameCounterTime--;
 		}
 
-		currentTime = System::getHighResTime();
+		currentTime = Platform::getHighResTime();
 		frameCounterTime += currentTime - lastTime;
 		updateTime += currentTime - lastTime;
 		lastTime = currentTime;

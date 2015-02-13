@@ -21,9 +21,9 @@ bool PlayerInputSystem::init()
 	if(m_isInitialised)
 		return false;
 
-	if(!m_inputPool.init(10))
+	if(!m_componentPool.init(10))
 	{
-		LOG(ERROR, "Couldnt initialise m_inputPool with 10 objects.");
+		LOG(ERROR, "Couldnt initialise m_componentPool with 10 objects.");
 		return false;
 	}
 
@@ -36,7 +36,7 @@ bool PlayerInputSystem::destroy()
 {
 	if(m_isInitialised)
 	{
-		m_inputPool.destroy();
+		m_componentPool.destroy();
 	}
 
 	UpdateStageEventData event;
@@ -49,8 +49,8 @@ bool PlayerInputSystem::destroy()
 
 void PlayerInputSystem::onUpdate(IEventDataPtr e)
 {
-	InputComponent** components = m_inputPool.getUsedBufferCache();
-	unsigned int numComponents = m_inputPool.getUsedSize();
+	InputComponent** components = m_componentPool.getUsedBufferCache();
+	unsigned int numComponents = m_componentPool.getUsedSize();
 
 	std::list<InputEvent> inputEvents = Engine::g_eventManager.getInputQueue();
 
@@ -64,17 +64,17 @@ void PlayerInputSystem::onUpdate(IEventDataPtr e)
 	}
 }
 
-InputComponent* PlayerInputSystem::createInputFromFile(const char* filePath)
+Component* PlayerInputSystem::createFromJSON(const char* json)
 {
 	using namespace rapidxml;
 
-	InputComponent* inputComponent = m_inputPool.create();
+	InputComponent* inputComponent = m_componentPool.create();
 
 	inputComponent->m_keyMap.clear();
 	inputComponent->m_mouseMap.clear();
 
-	FILE* file = fopen(filePath, "rb");
-	ASSERT(file != nullptr, "Couldn't open file: "<<filePath);
+	FILE* file = fopen(json, "rb");
+	ASSERT(file != nullptr, "Couldn't open file: "<<json);
 	fseek(file, 0L, SEEK_END);
 	unsigned int size = ftell(file);
 
@@ -83,10 +83,10 @@ InputComponent* PlayerInputSystem::createInputFromFile(const char* filePath)
 	char* buffer = (char*) calloc(size,sizeof(char));
 	if(!buffer)
 	{
-		// LOG(ERROR, "File: "<<filePath<<" too big");
+		// LOG(ERROR, "File: "<<json<<" too big");
 		fclose(file);
 
-		ASSERT(false,"File: "<<filePath<<" too big");
+		ASSERT(false,"File: "<<json<<" too big");
 	}
 
 	fread(buffer, 1, size, file);
@@ -101,7 +101,7 @@ InputComponent* PlayerInputSystem::createInputFromFile(const char* filePath)
 		fclose(file);
 		free(buffer);
 
-		ASSERT(false,"InputContext init file: "<<filePath<<" error, possibly wrong file or bad XML. parser error: "<<e.what());
+		ASSERT(false,"InputContext init file: "<<json<<" error, possibly wrong file or bad XML. parser error: "<<e.what());
 	}
 
 	xml_node<>* root = doc.first_node();
@@ -131,14 +131,14 @@ InputComponent* PlayerInputSystem::createInputFromFile(const char* filePath)
 				}
 				else
 				{
-				  ASSERT(false,"InputContext init file: "<<filePath<<" error, node name: "<<name<<" not identified.");
+				  ASSERT(false,"InputContext init file: "<<json<<" error, node name: "<<name<<" not identified.");
 				}
 				childNode = childNode->next_sibling();
 			}
 		}
 		else
 		{
-		  ASSERT(false,"InputContext init file: "<<filePath<<" error, node name: "<<name<<" not identified.");
+		  ASSERT(false,"InputContext init file: "<<json<<" error, node name: "<<name<<" not identified.");
 		}
 		node = node->next_sibling();
 	}
@@ -149,15 +149,15 @@ InputComponent* PlayerInputSystem::createInputFromFile(const char* filePath)
 	return inputComponent;
 }
 
-InputComponent* PlayerInputSystem::createInput()
+Component* PlayerInputSystem::create()
 {
-	InputComponent* inputComponent = m_inputPool.create();
+	InputComponent* inputComponent = m_componentPool.create();
 	return inputComponent;
 }
 
-void PlayerInputSystem::releaseInput(InputComponent* inputComponent)
+void PlayerInputSystem::release(Component* inputComponent)
 {
-	m_inputPool.release(inputComponent);
+	m_componentPool.release(dynamic_cast<InputComponent*>(inputComponent));
 }
 
 unsigned int PlayerInputSystem::parse(std::list<InputEvent>& input, 

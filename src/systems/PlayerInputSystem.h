@@ -3,7 +3,7 @@
 #define PLAYER_INPUT_SYSTEM_H
 
 #include "core/Messages.h"
-#include "systems/Component.h"
+#include "systems/System.h"
 #include "memory/ObjectPool.h"
 #include "events/InputTypes.h"
 #include "events/Events.h"
@@ -33,7 +33,7 @@ private:
 	std::map<unsigned int, std::vector<MouseMapAttributes>> m_mouseMap;
 };
 
-class PlayerInputSystem
+class PlayerInputSystem : public System
 {
 public:
 	PlayerInputSystem();
@@ -44,10 +44,10 @@ public:
 
 	void onUpdate(IEventDataPtr e);
 
-	InputComponent* createInputFromFile(const char* filePath);
-	InputComponent* createInput();
+	Component* create();
+	Component* createFromJSON(const char* json);
 
-	void releaseInput(InputComponent* inputComponent);
+	void release(Component* inputComponent);
 	
 private:
 	unsigned int parse(std::list<InputEvent>& input, InputComponent* inputComponent);
@@ -55,10 +55,11 @@ private:
 	KeyboardEvent mapXmlKeyNode(rapidxml::xml_node<>* node);
 	MouseMapAttributes mapXmlMouseNode(rapidxml::xml_node<>* node);
 
-	std::shared_ptr<PlayerInputMessage> m_messageBuffer[10];
-	ObjectPool<InputComponent> m_inputPool;
 
 	bool m_isInitialised;
+
+	std::shared_ptr<PlayerInputMessage> m_messageBuffer[10];
+	ObjectPool<InputComponent> m_componentPool;
 };
 
 #endif //PLAYER_INPUT_SYSTEM_H

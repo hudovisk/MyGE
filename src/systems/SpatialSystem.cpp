@@ -24,9 +24,9 @@ bool SpatialSystem::init()
 	if(m_isInitialised)
 		return false;
 
-	if(!m_spatialPool.init(100))
+	if(!m_componentPool.init(100))
 	{
-		LOG(ERROR, "Couldnt initialise m_spatialPool with 100 objects.");
+		LOG(ERROR, "Couldnt initialise m_componentPool with 100 objects.");
 		return false;
 	}
 
@@ -41,7 +41,8 @@ bool SpatialSystem::destroy()
 {
 	if(m_isInitialised)
 	{
-		m_spatialPool.destroy();
+		m_componentPool.destroy();
+		delete m_getTransformMsg.get();
 	}
 
 	return true;
@@ -57,14 +58,27 @@ void SpatialSystem::receiveMessage(SpatialComponent* component, IMessageDataPtr 
 	}
 }
 
-SpatialComponent* SpatialSystem::createSpatial()
+Component* SpatialSystem::create()
 {
-	SpatialComponent* spatial = m_spatialPool.create();
+	SpatialComponent* spatial = m_componentPool.create();
 	spatial->m_system = this;
 	return spatial;
 }
 
-void SpatialSystem::releaseSpatial(SpatialComponent* spatial)
+
+Component* SpatialSystem::createFromJSON(const char* json)
 {
-	m_spatialPool.release(spatial);
+	SpatialComponent* spatial = m_componentPool.create();
+	spatial->m_system = this;
+	return spatial;
+}
+
+void SpatialSystem::release(Component* component)
+{
+	LOG(INFO, "SpatialSystem release");
+	SpatialComponent* spatial = dynamic_cast<SpatialComponent*>(component);
+
+	spatial->m_system = nullptr;
+
+	m_componentPool.release(spatial);
 }

@@ -1,11 +1,11 @@
 
-#include "core/System.h"
+#include "core/Platform.h"
 #include "debug/Logger.h"
 
 #include <SDL2/SDL.h>
 
 
-bool System::init()
+bool Platform::init()
 {
 	if(SDL_Init(0))
 	{
@@ -22,7 +22,7 @@ bool System::init()
 	return true;
 }
 
-bool System::destroy()
+bool Platform::destroy()
 {
 	SDL_QuitSubSystem(SDL_INIT_TIMER);
 
@@ -31,17 +31,17 @@ bool System::destroy()
 	return true;
 }
 
-int System::getHighResClock()
+int Platform::getHighResClock()
 {
 	return SDL_GetPerformanceCounter();
 }
 
-int System::getHighResClockFrequency()
+int Platform::getHighResClockFrequency()
 {
 	return SDL_GetPerformanceFrequency();
 }
 
-float System::getHighResTime()
+float Platform::getHighResTime()
 {
 	return SDL_GetPerformanceCounter() / (float) SDL_GetPerformanceFrequency();
 }
