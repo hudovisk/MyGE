@@ -63,10 +63,32 @@ Component* SpatialSystem::create()
 }
 
 
-Component* SpatialSystem::createFromJSON(const char* json)
+Component* SpatialSystem::createFromJSON(const rapidjson::Value& jsonObject)
 {
 	SpatialComponent* spatial = m_componentPool.create();
 	spatial->m_system = this;
+
+	for(auto itMember = jsonObject.MemberBegin();
+		itMember != jsonObject.MemberEnd(); itMember++)
+	{
+		if(strcmp("pos", itMember->name.GetString()) == 0)
+		{
+			Vec3 pos;
+			pos.m_data[0] = itMember->value[0u].GetDouble();
+			pos.m_data[1] = itMember->value[1].GetDouble();
+			pos.m_data[2] = itMember->value[2].GetDouble();
+			spatial->m_transform.translate(pos);
+		}
+		else if(strcmp("scale", itMember->name.GetString()) == 0)
+		{
+			Vec3 scale;
+			scale.m_data[0] = itMember->value[0u].GetDouble();
+			scale.m_data[1] = itMember->value[1].GetDouble();
+			scale.m_data[2] = itMember->value[2].GetDouble();
+			spatial->m_transform.translate(scale);	
+		}
+	}
+
 	return spatial;
 }
 

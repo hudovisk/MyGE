@@ -38,7 +38,7 @@ public:
 
 	void receiveMessage(MovementComponent* component, IMessageDataPtr message);
 
-	Component* createFromJSON(const char* json);
+	Component* createFromJSON(const rapidjson::Value& jsonObject);
 	Component* create();
 
 	void release(Component* movementComponent);

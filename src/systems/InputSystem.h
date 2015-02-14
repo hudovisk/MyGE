@@ -45,11 +45,12 @@ public:
 	void onUpdate(IEventDataPtr e);
 
 	Component* create();
-	Component* createFromJSON(const char* json);
+	Component* createFromJSON(const rapidjson::Value& jsonObject);
 
 	void release(Component* inputComponent);
 	
 private:
+	void loadFile(InputComponent* inputComponent, const char* json);
 	unsigned int parse(std::list<InputEvent>& input, InputComponent* inputComponent);
 
 	KeyboardEvent mapXmlKeyNode(rapidxml::xml_node<>* node);

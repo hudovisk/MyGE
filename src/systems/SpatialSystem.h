@@ -35,7 +35,7 @@ public:
 	void receiveMessage(SpatialComponent* component, IMessageDataPtr message);
 
 	Component* create();
-	Component* createFromJSON(const char* json);
+	Component* createFromJSON(const rapidjson::Value& jsonObject);
 
 	void release(Component* spatial);
 

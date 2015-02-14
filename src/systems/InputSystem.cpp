@@ -63,17 +63,38 @@ void InputSystem::onUpdate(IEventDataPtr e)
 	}
 }
 
-Component* InputSystem::createFromJSON(const char* json)
+Component* InputSystem::create()
+{
+	InputComponent* inputComponent = m_componentPool.create();
+	return inputComponent;
+}
+
+Component* InputSystem::createFromJSON(const rapidjson::Value& jsonObject)
+{
+	InputComponent* component = m_componentPool.create();
+
+	for(auto itMember = jsonObject.MemberBegin();
+		itMember != jsonObject.MemberEnd(); itMember++)
+	{
+		if(strcmp("file", itMember->name.GetString()) == 0)
+		{
+			loadFile(component, itMember->value.GetString());
+		}
+	}
+
+	return component;
+}
+
+void InputSystem::loadFile(InputComponent* inputComponent, 
+	const char* filePath)
 {
 	using namespace rapidxml;
-
-	InputComponent* inputComponent = m_componentPool.create();
 
 	inputComponent->m_keyMap.clear();
 	inputComponent->m_mouseMap.clear();
 
-	FILE* file = fopen(json, "rb");
-	ASSERT(file != nullptr, "Couldn't open file: "<<json);
+	FILE* file = fopen(filePath, "rb");
+	ASSERT(file != nullptr, "Couldn't open file: "<<filePath);
 	fseek(file, 0L, SEEK_END);
 	unsigned int size = ftell(file);
 
@@ -85,7 +106,7 @@ Component* InputSystem::createFromJSON(const char* json)
 		// LOG(ERROR, "File: "<<json<<" too big");
 		fclose(file);
 
-		ASSERT(false,"File: "<<json<<" too big");
+		ASSERT(false,"File: "<<filePath<<" too big");
 	}
 
 	fread(buffer, 1, size, file);
@@ -100,7 +121,7 @@ Component* InputSystem::createFromJSON(const char* json)
 		fclose(file);
 		free(buffer);
 
-		ASSERT(false,"InputContext init file: "<<json<<" error, possibly wrong file or bad XML. parser error: "<<e.what());
+		ASSERT(false,"InputContext init file: "<<filePath<<" error, possibly wrong file or bad XML. parser error: "<<e.what());
 	}
 
 	xml_node<>* root = doc.first_node();
@@ -130,28 +151,20 @@ Component* InputSystem::createFromJSON(const char* json)
 				}
 				else
 				{
-				  ASSERT(false,"InputContext init file: "<<json<<" error, node name: "<<name<<" not identified.");
+				  ASSERT(false,"InputContext init file: "<<filePath<<" error, node name: "<<name<<" not identified.");
 				}
 				childNode = childNode->next_sibling();
 			}
 		}
 		else
 		{
-		  ASSERT(false,"InputContext init file: "<<json<<" error, node name: "<<name<<" not identified.");
+		  ASSERT(false,"InputContext init file: "<<filePath<<" error, node name: "<<name<<" not identified.");
 		}
 		node = node->next_sibling();
 	}
 
 	free(buffer);
 	fclose(file);
-
-	return inputComponent;
-}
-
-Component* InputSystem::create()
-{
-	InputComponent* inputComponent = m_componentPool.create();
-	return inputComponent;
 }
 
 void InputSystem::release(Component* inputComponent)

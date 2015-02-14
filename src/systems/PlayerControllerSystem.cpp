@@ -133,7 +133,7 @@ Component* PlayerControllerSystem::create()
 	return component;
 }
 	
-Component* PlayerControllerSystem::createFromJSON(const char* json)
+Component* PlayerControllerSystem::createFromJSON(const rapidjson::Value& jsonObject)
 {
 	PlayerComponent* component = m_componentPool.create();
 	component->m_system = this;

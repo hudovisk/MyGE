@@ -4,6 +4,8 @@
 
 #include "systems/Component.h"
 
+#include "rapidjson/document.h"
+
 class System
 {
 public:
@@ -14,7 +16,7 @@ public:
 	virtual bool destroy() { return true; }
 
 	virtual Component* create() = 0;
-	virtual Component* createFromJSON(const char* json) = 0;
+	virtual Component* createFromJSON(const rapidjson::Value& jsonObject) = 0;
 
 	virtual void release(Component* component) = 0;
 };

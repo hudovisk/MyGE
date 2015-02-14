@@ -35,10 +35,12 @@ public:
 	void onUpdate(IEventDataPtr e);
 
 	Component* create();
-	Component* createFromJSON(const char* json);
+	Component* createFromJSON(const rapidjson::Value& jsonObject);
 
 	void release(Component* mesh);
 private:
+	void loadFile(MeshComponent* mesh, const char* filePath);
+
 	bool m_isInitialised;
 
 	GetTransformMessage m_getTransformMsg;

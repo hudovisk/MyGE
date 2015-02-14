@@ -88,18 +88,32 @@ Component* MeshSystem::create()
 	return mesh;
 }
 
-Component* MeshSystem::createFromJSON(const char* json)
+Component* MeshSystem::createFromJSON(const rapidjson::Value& jsonObject)
 {
-	MeshComponent* mesh = m_componentPool.create();
+	MeshComponent* component = m_componentPool.create();
 
+	for(auto itMember = jsonObject.MemberBegin();
+		itMember != jsonObject.MemberEnd(); itMember++)
+	{
+		if(strcmp("file", itMember->name.GetString()) == 0)
+		{
+			loadFile(component, itMember->value.GetString());
+		}
+	}
+
+	return component;
+}
+
+void MeshSystem::loadFile(MeshComponent* mesh, const char* filePath)
+{
 	Assimp::Importer importer;
-	const aiScene *scene = importer.ReadFile(json, 
+	const aiScene *scene = importer.ReadFile(filePath, 
 		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 	
 	if(!scene)
 	{
-		LOG(ERROR, "Error importing: "<<json<<". "<<importer.GetErrorString());
-		return mesh;
+		LOG(ERROR, "Error importing: "<<filePath<<". "<<importer.GetErrorString());
+		return;
 	}
 
 	for(unsigned int i=0; i < scene->mNumMeshes; i++)
@@ -113,8 +127,6 @@ Component* MeshSystem::createFromJSON(const char* json)
 
 		mesh->m_geometrics.push_back(Engine::g_renderManager.createGeometric(vertices, indices));
 	}
-
-	return mesh;
 }
 
 void MeshSystem::release(Component* component)

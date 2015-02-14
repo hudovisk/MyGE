@@ -112,9 +112,33 @@ Component* MovementSystem::create()
 	return component;
 }
 
-Component* MovementSystem::createFromJSON(const char* json)
+Component* MovementSystem::createFromJSON(const rapidjson::Value& jsonObject)
 {
-	return nullptr;
+	MovementComponent* component = m_componentPool.create();
+	component->m_system = this;
+
+	for(auto itMember = jsonObject.MemberBegin();
+		itMember != jsonObject.MemberEnd(); itMember++)
+	{
+		if(strcmp("maxVelocity", itMember->name.GetString()) == 0)
+		{
+			component->m_maxVelocity = itMember->value.GetDouble();
+		}
+		else if(strcmp("currentVelocity", itMember->name.GetString()) == 0)
+		{
+			component->m_currentVelocity = itMember->value.GetDouble();
+		}
+		else if(strcmp("localDirection", itMember->name.GetString()) == 0)
+		{
+			Vec3 dir;
+			dir.m_data[0] = itMember->value[0u].GetDouble();
+			dir.m_data[1] = itMember->value[1].GetDouble();
+			dir.m_data[2] = itMember->value[2].GetDouble();
+			component->m_localDirection = dir;
+		}
+	}
+
+	return component;
 }
 
 void MovementSystem::release(Component* movementComponent)

@@ -20,6 +20,7 @@ public:
 	bool init();
 	bool destroy();
 
+	void loadEntities(std::string filePath);
 	void loadEntity(const char* filePath);
 	void loadPlayer(const char* filePath);
 

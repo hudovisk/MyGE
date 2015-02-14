@@ -34,7 +34,7 @@ public:
 	void receiveMessage(PlayerComponent* component, IMessageDataPtr message);
 
 	Component* create();
-	Component* createFromJSON(const char* json);
+	Component* createFromJSON(const rapidjson::Value& jsonObject);
 
 	void release(Component* component);
 private:
