@@ -12,7 +12,7 @@ void getVerticesAndIndices(std::vector<Vertex>& vertices,
 	std::vector<unsigned int>& indices, const aiMesh* aMesh);
 
 MeshSystem::MeshSystem()
-	: m_isInitialised(false), m_getTransformMsg(nullptr)
+	: m_isInitialised(false)
 {
 
 }
@@ -38,8 +38,6 @@ bool MeshSystem::init()
 		EventListenerDelegate::from_method<MeshSystem,&MeshSystem::onUpdate>(this),
 		event.getType());
 
-	m_getTransformMsg = std::shared_ptr<GetTransformMessage>(new GetTransformMessage);
-
 	m_isInitialised = true;
 
 	return true;
@@ -50,7 +48,6 @@ bool MeshSystem::destroy()
 	if(m_isInitialised)
 	{
 		m_componentPool.destroy();
-
 		m_isInitialised = false;
 	}
 	return true;
@@ -65,15 +62,15 @@ void MeshSystem::onUpdate(IEventDataPtr e)
 	{
 		MeshComponent* mesh = meshes[i];
 
-		m_getTransformMsg->setEntityHandler(mesh->m_entity);
-		Engine::g_entityManager.sendMessage(IMessageDataPtr(m_getTransformMsg));
+		m_getTransformMsg.setEntityHandler(mesh->m_entity);
+		Engine::g_entityManager.sendMessage(&m_getTransformMsg);
 
-		if(!m_getTransformMsg->isHandled())
+		if(!m_getTransformMsg.isHandled())
 		{
 			LOG(ERROR, "Entity id: "<<mesh->m_entity<<" does not have a transform component.");
 			continue;
 		}
-		Transform* transform = m_getTransformMsg->getTransform();
+		Transform* transform = m_getTransformMsg.getTransform();
 
 		Engine::g_renderManager.bindDefaultShader();
 		Engine::g_renderManager.setMatrixUniform("modelViewProjection_Matrix", transform->getMatrix());
@@ -122,7 +119,6 @@ Component* MeshSystem::createFromJSON(const char* json)
 
 void MeshSystem::release(Component* component)
 {
-	LOG(INFO, "MeshSystem release");
 	MeshComponent* mesh = dynamic_cast<MeshComponent*>(component);
 	for(unsigned int i=0; i<mesh->m_geometrics.size(); i++)
 	{

@@ -9,7 +9,7 @@ void SpatialComponent::receiveMessage(IMessageDataPtr message)
 }
 
 SpatialSystem::SpatialSystem()
-	: m_isInitialised(false), m_getTransformMsg(nullptr)
+	: m_isInitialised(false)
 {
 
 }
@@ -30,8 +30,6 @@ bool SpatialSystem::init()
 		return false;
 	}
 
-	m_getTransformMsg = std::shared_ptr<GetTransformMessage>(new GetTransformMessage());
-
 	m_isInitialised = true;
 
 	return true;
@@ -42,7 +40,6 @@ bool SpatialSystem::destroy()
 	if(m_isInitialised)
 	{
 		m_componentPool.destroy();
-		delete m_getTransformMsg.get();
 	}
 
 	return true;
@@ -50,9 +47,9 @@ bool SpatialSystem::destroy()
 
 void SpatialSystem::receiveMessage(SpatialComponent* component, IMessageDataPtr message)
 {
-	if(message->getType() == m_getTransformMsg->getType())
+	if(message->getType() == m_getTransformMsg.getType())
 	{
-		GetTransformMessage* getTransformMsg = dynamic_cast<GetTransformMessage*>(message.get());
+		GetTransformMessage* getTransformMsg = dynamic_cast<GetTransformMessage*>(message);
 		getTransformMsg->setTransform(&component->m_transform);
 		getTransformMsg->setHandled(true);
 	}
@@ -75,7 +72,6 @@ Component* SpatialSystem::createFromJSON(const char* json)
 
 void SpatialSystem::release(Component* component)
 {
-	LOG(INFO, "SpatialSystem release");
 	SpatialComponent* spatial = dynamic_cast<SpatialComponent*>(component);
 
 	spatial->m_system = nullptr;

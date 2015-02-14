@@ -101,6 +101,7 @@ public:
 
 class UpdateStageEventData : public BaseEventData
 {
+	float m_dt;
 public:
 	UpdateStageEventData(const float timeStamp = 0.0f) :
 		BaseEventData(timeStamp)
@@ -111,6 +112,8 @@ public:
 	//must be a diferent number!!
 	const unsigned int getType() const { return 4; }
 
+	void setDeltaT(float dt) { m_dt = dt; }
+	float getDeltaT() { return m_dt; }
 //	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
 };
 

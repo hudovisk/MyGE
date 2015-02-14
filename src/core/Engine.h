@@ -83,7 +83,7 @@ private:
 
 	EngineState m_state;
 
-	IEventDataPtr m_updateStageEvent;
+	std::shared_ptr<UpdateStageEventData> m_updateStageEvent;
 	IEventDataPtr m_preRenderStageEvent;
 	IEventDataPtr m_renderStageEvent;
 	IEventDataPtr m_postRenderStageEvent;

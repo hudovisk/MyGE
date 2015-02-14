@@ -1,70 +1,69 @@
 
-#include "systems/PlayerInputSystem.h"
+#include "systems/InputSystem.h"
 
 #include "core/Engine.h"
 #include "debug/Logger.h"
 #include "debug/MyAssert.h"
 
-PlayerInputSystem::PlayerInputSystem()
+InputSystem::InputSystem()
 	: m_isInitialised(false)
 {
 
 }
 
-PlayerInputSystem::~PlayerInputSystem()
+InputSystem::~InputSystem()
 {
 	destroy();
 }
 
-bool PlayerInputSystem::init()
+bool InputSystem::init()
 {
 	if(m_isInitialised)
 		return false;
 
-	if(!m_componentPool.init(10))
+	if(!m_componentPool.init(100))
 	{
 		LOG(ERROR, "Couldnt initialise m_componentPool with 10 objects.");
 		return false;
 	}
+
+	UpdateStageEventData event;
+	Engine::g_eventManager.addListenner(
+		EventListenerDelegate::from_method<InputSystem,&InputSystem::onUpdate>(this),
+		event.getType());
 
 	m_isInitialised = true;
 
 	return true;
 }
 
-bool PlayerInputSystem::destroy()
+bool InputSystem::destroy()
 {
 	if(m_isInitialised)
 	{
 		m_componentPool.destroy();
 	}
 
-	UpdateStageEventData event;
-	Engine::g_eventManager.addListenner(
-		EventListenerDelegate::from_method<PlayerInputSystem,&PlayerInputSystem::onUpdate>(this),
-		event.getType());
-
 	return true;
 }
 
-void PlayerInputSystem::onUpdate(IEventDataPtr e)
+void InputSystem::onUpdate(IEventDataPtr e)
 {
 	InputComponent** components = m_componentPool.getUsedBufferCache();
 	unsigned int numComponents = m_componentPool.getUsedSize();
 
-	std::list<InputEvent> inputEvents = Engine::g_eventManager.getInputQueue();
-
+	std::list<InputEvent>& inputEvents = Engine::g_eventManager.getInputQueue();
 	for(unsigned int i=0; i<numComponents; i++)
 	{
 		unsigned int numMessages = parse(inputEvents, components[i]);
 		for(unsigned int j=0; j<numMessages; j++)
 		{
-			Engine::g_entityManager.sendMessage(IMessageDataPtr(m_messageBuffer[j]));
+			Engine::g_entityManager.sendMessage(&m_messageBuffer[j]);
 		}
 	}
 }
 
-Component* PlayerInputSystem::createFromJSON(const char* json)
+Component* InputSystem::createFromJSON(const char* json)
 {
 	using namespace rapidxml;
 
@@ -149,23 +148,28 @@ Component* PlayerInputSystem::createFromJSON(const char* json)
 	return inputComponent;
 }
 
-Component* PlayerInputSystem::create()
+Component* InputSystem::create()
 {
 	InputComponent* inputComponent = m_componentPool.create();
 	return inputComponent;
 }
 
-void PlayerInputSystem::release(Component* inputComponent)
+void InputSystem::release(Component* inputComponent)
 {
 	m_componentPool.release(dynamic_cast<InputComponent*>(inputComponent));
 }
 
-unsigned int PlayerInputSystem::parse(std::list<InputEvent>& input, 
+unsigned int InputSystem::parse(std::list<InputEvent>& input, 
 	InputComponent* inputComponent)
 {
 	int numMessages = 0;
-	for(auto itInput = input.begin(); itInput != input.end(); ++itInput)
+	for(auto itInput = input.begin(); itInput != input.end(); itInput++)
 	{
+		if(numMessages >= 100)
+		{
+			LOG(WARN, "Message Buffer exceded! skipping messages.");
+			return numMessages;
+		}
 		switch(itInput->m_type)
 		{
 			case InputEventType::KEYBOARD :
@@ -175,9 +179,13 @@ unsigned int PlayerInputSystem::parse(std::list<InputEvent>& input,
 				{
 					for(unsigned int i=0; i < itFind->second.size(); i++)
 					{
-						m_messageBuffer[numMessages]->setId(itFind->second.at(i));
+						m_messageBuffer[numMessages].setId(itFind->second.at(i));
+						m_messageBuffer[numMessages].setEntityHandler(inputComponent->m_entity);
 					  	numMessages++;
 					}
+					itInput = input.erase(itInput);
+					if(itInput == input.end())
+						return numMessages;
 				}
 				break;
 			}
@@ -186,18 +194,27 @@ unsigned int PlayerInputSystem::parse(std::list<InputEvent>& input,
  				auto itFind = inputComponent->m_mouseMap.find(itInput->m_mouse.m_code);	
  				if(itFind != inputComponent->m_mouseMap.end())
  				{
+ 					bool handled = false;
 					for(auto itAtributes = itFind->second.begin(); itAtributes != itFind->second.end(); itAtributes++)
 					{
 						MouseMapAttributes mouseAttributes = *itAtributes;
 						if(itInput->m_mouse.m_pressed == mouseAttributes.m_pressed)
 						{
-							m_messageBuffer[numMessages]->setId(mouseAttributes.m_messageId);
+							m_messageBuffer[numMessages].setId(mouseAttributes.m_messageId);
 							int posX = (mouseAttributes.m_relativeX) ? itInput->m_mouse.m_relX : itInput->m_mouse.m_posX;
 							int posY = (mouseAttributes.m_relativeY) ? itInput->m_mouse.m_relY : itInput->m_mouse.m_posY;
-							m_messageBuffer[numMessages]->setInputX((mouseAttributes.m_invertedX) ? -posX : posX);
-							m_messageBuffer[numMessages]->setInputY((mouseAttributes.m_invertedY) ? -posY : posY);
+							m_messageBuffer[numMessages].setInputX((mouseAttributes.m_invertedX) ? -posX : posX);
+							m_messageBuffer[numMessages].setInputY((mouseAttributes.m_invertedY) ? -posY : posY);
+							m_messageBuffer[numMessages].setEntityHandler(inputComponent->m_entity);
 							numMessages++;
+							handled = true;
 						}
+					}
+					if(handled)
+					{
+						itInput = input.erase(itInput);
+						if(itInput == input.end())
+							return numMessages;
 					}
 				}
 				break;
@@ -211,7 +228,7 @@ unsigned int PlayerInputSystem::parse(std::list<InputEvent>& input,
 	return numMessages;
 }
 
-KeyboardEvent PlayerInputSystem::mapXmlKeyNode(rapidxml::xml_node<>* node)
+KeyboardEvent InputSystem::mapXmlKeyNode(rapidxml::xml_node<>* node)
 {
 	KeyboardEvent keyEvent;
 	
@@ -250,7 +267,7 @@ KeyboardEvent PlayerInputSystem::mapXmlKeyNode(rapidxml::xml_node<>* node)
 	return keyEvent;
 }
 
-MouseMapAttributes PlayerInputSystem::mapXmlMouseNode(rapidxml::xml_node<>* node)
+MouseMapAttributes InputSystem::mapXmlMouseNode(rapidxml::xml_node<>* node)
 {
 	MouseMapAttributes mouseAttributes;
 	unsigned int mouseCode = 0;

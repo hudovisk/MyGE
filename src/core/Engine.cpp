@@ -79,7 +79,10 @@ bool Engine::init()
 
 void Engine::start()
 {
-	g_entityManager.loadEntity("res/models/monkey.obj");
+	g_entityManager.loadPlayer("res/models/monkey.obj");
+	for(int i=0; i<99; i++)
+		g_entityManager.loadEntity("res/models/monkey.obj");
+
 	float lastTime = Platform::getHighResTime();
 	float currentTime = lastTime;
 	float updateTime = 0;
@@ -121,6 +124,7 @@ void Engine::start()
 
 void Engine::update(float updateTime)
 {
+	m_updateStageEvent->setDeltaT(updateTime);
 	g_eventManager.triggerEvent(m_updateStageEvent);
 }
 

@@ -3,8 +3,9 @@
 
 #include "systems/MeshSystem.h"
 #include "systems/SpatialSystem.h"
-#include "systems/PlayerInputSystem.h"
+#include "systems/InputSystem.h"
 #include "systems/MovementSystem.h"
+#include "systems/PlayerControllerSystem.h"
 
 #include "core/Engine.h"
 
@@ -28,8 +29,9 @@ bool EntityManager::init()
 
 	m_systems["MeshSystem"] = new MeshSystem();
 	m_systems["SpatialSystem"] = new SpatialSystem();
-	m_systems["PlayerInputSystem"] = new PlayerInputSystem();
+	m_systems["InputSystem"] = new InputSystem();
 	m_systems["MovementSystem"] = new MovementSystem();
+	m_systems["PlayerControllerSystem"] = new PlayerControllerSystem();
 
 	for(auto itSystem = m_systems.begin(); itSystem != m_systems.end(); itSystem++)
 	{
@@ -55,7 +57,6 @@ bool EntityManager::destroy()
 			for(auto itComponent = itEntity->second.begin(); 
 				itComponent != itEntity->second.end(); itComponent++)
 			{
-				LOG(INFO, "System: "<<itComponent->first);
 				m_systems[itComponent->first]->release(itComponent->second);
 			}
 		}
@@ -63,7 +64,6 @@ bool EntityManager::destroy()
 		//DESTROY SYSTEMS
 		for(auto itSystem = m_systems.begin(); itSystem != m_systems.end(); itSystem++)
 		{
-			LOG(ERROR, "System: "<<itSystem->first<<" to destroy.");
 			if(!itSystem->second->destroy())
 			{
 				LOG(ERROR, "System: "<<itSystem->first<<" failed to destroy.");
@@ -87,6 +87,35 @@ void EntityManager::loadEntity(const char* filePath)
 	Component* spatial = m_systems["SpatialSystem"]->create();
 	spatial->m_entity = entity;	
 	m_entities[entity].insert(std::pair<std::string, Component*>("SpatialSystem", spatial));
+
+	Component* movement = m_systems["MovementSystem"]->create();
+	movement->m_entity = entity;
+	m_entities[entity].insert(std::pair<std::string, Component*>("MovementSystem", movement));
+}
+
+void EntityManager::loadPlayer(const char* filePath)
+{
+	EntityHandler entity = EntityManager::NEXT_ID++;
+
+	Component* mesh = m_systems["MeshSystem"]->createFromJSON(filePath);
+	mesh->m_entity = entity;
+	m_entities[entity].insert(std::pair<std::string, Component*>("MeshSystem", mesh));
+
+	Component* spatial = m_systems["SpatialSystem"]->create();
+	spatial->m_entity = entity;	
+	m_entities[entity].insert(std::pair<std::string, Component*>("SpatialSystem", spatial));
+
+	Component* input = m_systems["InputSystem"]->createFromJSON("res/scripts/playerInputMap.xml");
+	input->m_entity = entity;	
+	m_entities[entity].insert(std::pair<std::string, Component*>("InputSystem", input));
+
+	Component* movement = m_systems["MovementSystem"]->create();
+	movement->m_entity = entity;
+	m_entities[entity].insert(std::pair<std::string, Component*>("MovementSystem", movement));
+
+	Component* player = m_systems["PlayerControllerSystem"]->create();
+	player->m_entity = entity;
+	m_entities[entity].insert(std::pair<std::string, Component*>("PlayerControllerSystem", player));	
 }
 
 void EntityManager::sendMessage(IMessageDataPtr message)

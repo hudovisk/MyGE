@@ -41,8 +41,9 @@ public:
 private:
 	bool m_isInitialised;
 
+	GetTransformMessage m_getTransformMsg;
+
 	ObjectPool<MeshComponent> m_componentPool;
-	std::shared_ptr<GetTransformMessage> m_getTransformMsg;
 };
 
 #endif

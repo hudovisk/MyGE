@@ -46,6 +46,9 @@ public:
 private:
 	bool m_isInitialised;
 
+	unsigned int m_movementMessageType;
+	GetTransformMessage m_getTransformMsg;
+
 	ObjectPool<MovementComponent> m_componentPool;
 };
 

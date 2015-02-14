@@ -43,7 +43,7 @@ private:
 	bool m_isInitialised;	
 	
 	ObjectPool<SpatialComponent> m_componentPool;
-	std::shared_ptr<GetTransformMessage> m_getTransformMsg;
+	GetTransformMessage m_getTransformMsg;
 };
 
 #endif

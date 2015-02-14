@@ -31,6 +31,7 @@ public:
 
     Vec3 transform(const Vec4& v);
 
+    Vec3 getPosition() { return m_translation; }
     void translate(Vec3 pos);
     void scale(Vec3 scale);
 

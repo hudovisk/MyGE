@@ -24,7 +24,7 @@ bool RenderManager::init(int width, int height)
 	if(!m_texturesPool.init(10))
 		return false;
 
-	if(!m_geometricPool.init(1000))
+	if(!m_geometricPool.init(100000))
 		return false;
 
 	if(!m_defaultShader.init("res/shaders/vertex.glsl", 

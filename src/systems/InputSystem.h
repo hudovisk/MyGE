@@ -14,7 +14,7 @@
 #include <vector>
 #include <list>
 
-class PlayerInputSystem;
+class InputSystem;
 
 class InputComponent : public Component
 {
@@ -24,7 +24,7 @@ public:
 
 private:
 
-	friend class PlayerInputSystem;
+	friend class InputSystem;
 
 	using MouseMap = std::pair<unsigned int, std::vector<MouseMapAttributes>>;
 	using KeyMap = std::pair<KeyboardEvent, std::vector<unsigned int>>;
@@ -33,11 +33,11 @@ private:
 	std::map<unsigned int, std::vector<MouseMapAttributes>> m_mouseMap;
 };
 
-class PlayerInputSystem : public System
+class InputSystem : public System
 {
 public:
-	PlayerInputSystem();
-	~PlayerInputSystem();
+	InputSystem();
+	~InputSystem();
 
 	bool init();
 	bool destroy();
@@ -55,10 +55,10 @@ private:
 	KeyboardEvent mapXmlKeyNode(rapidxml::xml_node<>* node);
 	MouseMapAttributes mapXmlMouseNode(rapidxml::xml_node<>* node);
 
-
 	bool m_isInitialised;
 
-	std::shared_ptr<PlayerInputMessage> m_messageBuffer[10];
+	InputMessage m_messageBuffer[100];
+	
 	ObjectPool<InputComponent> m_componentPool;
 };
 
