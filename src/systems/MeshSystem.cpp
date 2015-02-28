@@ -8,6 +8,8 @@
 #include "assimp-3.1.1/postprocess.h"
 #include "assimp-3.1.1/scene.h"
 
+#include <iostream>
+
 void getVerticesAndIndices(std::vector<Vertex>& vertices, 
 	std::vector<unsigned int>& indices, const aiMesh* aMesh);
 
@@ -73,7 +75,9 @@ void MeshSystem::onUpdate(IEventDataPtr e)
 		Transform* transform = m_getTransformMsg.getTransform();
 
 		Engine::g_renderManager.bindDefaultShader();
-		Engine::g_renderManager.setMatrixUniform("modelViewProjection_Matrix", transform->getMatrix());
+		// Engine::g_renderManager.setModelViewMatrixUniform("modelView_Matrix", transform->getMatrix());
+		Engine::g_renderManager.setModelViewProjectionMatrixUniform(
+			"modelView_Matrix", "modelViewProjection_Matrix", transform->getMatrix());
 
 		for(unsigned int j=0; j<mesh->m_geometrics.size(); j++)
 		{
@@ -104,18 +108,58 @@ Component* MeshSystem::createFromJSON(const rapidjson::Value& jsonObject)
 	return component;
 }
 
-void MeshSystem::loadFile(MeshComponent* mesh, const char* filePath)
+void MeshSystem::loadFile(MeshComponent* mesh, std::string filePath)
 {
 	Assimp::Importer importer;
 	const aiScene *scene = importer.ReadFile(filePath, 
 		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 	
+	//GET DIRECTORY TO LOAD TEXTURES CORRECTLY
+	std::string::size_type slashIndex = filePath.find_last_of("/");
+	std::string dir;
+	if (slashIndex == std::string::npos) {
+      dir = ".";
+	}
+	else if (slashIndex == 0) {
+		dir = "/";
+	}
+	else {
+		dir = filePath.substr(0, slashIndex);
+	}
+
 	if(!scene)
 	{
 		LOG(ERROR, "Error importing: "<<filePath<<". "<<importer.GetErrorString());
 		return;
 	}
 
+	//LOAD TEXTURES
+	std::vector<Texture*> textures(scene->mNumMaterials);
+	for(unsigned int i=0; i < scene->mNumMaterials; i++)
+	{
+		const aiMaterial* aMaterial = scene->mMaterials[i];
+		if(aMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+		{
+			aiString texturePath;
+			if(aMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath,
+				NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
+			{
+				//CONVERT SLASHES FOR LINUX
+				int aux = 0;
+	  			while(texturePath.data[aux] != '\0')
+	  			{
+	  				if(texturePath.data[aux] == '\\')
+	  					texturePath.data[aux] = '/';
+	  				aux++;
+	  			}
+	  			std::string fullPath = dir + "/" + texturePath.data;
+	  			// std::cout<<"Pos: "<<pos++<<" Texture: "<<fullPath<<std::endl;
+  				textures[i] = Engine::g_renderManager.createTextureFromImg(fullPath);
+			}
+		}
+	}
+
+	//LOAD VERTICES
 	for(unsigned int i=0; i < scene->mNumMeshes; i++)
 	{
 		const aiMesh* aMesh = scene->mMeshes[i];
@@ -125,7 +169,15 @@ void MeshSystem::loadFile(MeshComponent* mesh, const char* filePath)
 
 		getVerticesAndIndices(vertices, indices, aMesh);
 
-		mesh->m_geometrics.push_back(Engine::g_renderManager.createGeometric(vertices, indices));
+		Geometric* geometric = Engine::g_renderManager.createGeometric(vertices, indices);
+		if(aMesh->HasTextureCoords(0))
+		{
+			// std::cout<<"Index: "<<aMesh->mMaterialIndex;
+			// std::cout<<" Address: "<<textures[aMesh->mMaterialIndex]<<std::endl;
+			geometric->m_texture = textures[aMesh->mMaterialIndex];
+		}
+
+		mesh->m_geometrics.push_back(geometric);
 	}
 }
 
@@ -134,6 +186,11 @@ void MeshSystem::release(Component* component)
 	MeshComponent* mesh = dynamic_cast<MeshComponent*>(component);
 	for(unsigned int i=0; i<mesh->m_geometrics.size(); i++)
 	{
+		if(mesh->m_geometrics[i]->m_texture)
+		{
+			Engine::g_renderManager.releaseTexture(mesh->m_geometrics[i]->m_texture);	
+		}
+
 		Engine::g_renderManager.releaseGeometric(mesh->m_geometrics[i]);
 	}
 

@@ -41,6 +41,10 @@ bool InputSystem::destroy()
 {
 	if(m_isInitialised)
 	{
+		UpdateStageEventData event;
+		Engine::g_eventManager.removeListenner(
+			EventListenerDelegate::from_method<InputSystem,&InputSystem::onUpdate>(this),
+			event.getType());
 		m_componentPool.destroy();
 	}
 

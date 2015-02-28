@@ -46,6 +46,12 @@ bool MovementSystem::destroy()
 	if(m_isInitialised)
 	{
 		m_componentPool.destroy();
+
+		UpdateStageEventData event;
+		Engine::g_eventManager.removeListenner(
+			EventListenerDelegate::from_method<MovementSystem,&MovementSystem::onUpdate>(this),
+			event.getType());
+
 		m_isInitialised = false;
 	}
 
@@ -79,7 +85,7 @@ void MovementSystem::onUpdate(IEventDataPtr e)
 
 
 		Vec3 dir = transform->transform(Vec4(component->m_localDirection, 0));
-
+		dir.normalize();
 		Vec3 pos = transform->getPosition() + dir*component->m_currentVelocity*dt;
 
 		transform->translate( pos );
@@ -107,6 +113,10 @@ Component* MovementSystem::create()
 
 	component->m_maxVelocity = 1;
 	component->m_currentVelocity = 0;
+
+	component->m_maxRotationalVelocity = 1;
+	component->m_currentRotationalVelocity = 0;
+
 	component->m_localDirection = Vec3(0,0,0);
 
 	return component;
@@ -127,6 +137,14 @@ Component* MovementSystem::createFromJSON(const rapidjson::Value& jsonObject)
 		else if(strcmp("currentVelocity", itMember->name.GetString()) == 0)
 		{
 			component->m_currentVelocity = itMember->value.GetDouble();
+		}
+		else if(strcmp("maxRotationalVelocity", itMember->name.GetString()) == 0)
+		{
+			component->m_maxRotationalVelocity = itMember->value.GetDouble();
+		}
+		else if(strcmp("currentRotationalVelocity", itMember->name.GetString()) == 0)
+		{
+			component->m_currentRotationalVelocity = itMember->value.GetDouble();
 		}
 		else if(strcmp("localDirection", itMember->name.GetString()) == 0)
 		{

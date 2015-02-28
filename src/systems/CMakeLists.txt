@@ -3,7 +3,8 @@ set(my_systems_source_files
  	SpatialSystem.cpp 
  	InputSystem.cpp 
  	MovementSystem.cpp 
- 	PlayerControllerSystem.cpp )
+ 	PlayerControllerSystem.cpp
+ 	CameraSystem.cpp )
 
 set(my_systems_header_files
  	MeshSystem.h 
@@ -11,7 +12,8 @@ set(my_systems_header_files
  	Component.h 
  	InputSystem.h 
  	MovementSystem.h 
- 	PlayerControllerSystem.h)
+ 	PlayerControllerSystem.h
+ 	CameraSystem.h )
 
 add_library(my_systems ${my_systems_source_files} ${my_systems_header_files})
 

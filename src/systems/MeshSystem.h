@@ -39,7 +39,7 @@ public:
 
 	void release(Component* mesh);
 private:
-	void loadFile(MeshComponent* mesh, const char* filePath);
+	void loadFile(MeshComponent* mesh, std::string filePath);
 
 	bool m_isInitialised;
 

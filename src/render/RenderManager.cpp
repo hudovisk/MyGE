@@ -1,14 +1,11 @@
 
+#include "core/Engine.h"
+
 #include "render/RenderManager.h"
 #include "debug/Logger.h"
 #include "debug/MyAssert.h"
-#include "core/Engine.h"
-
-#include "core/Camera.h"
 
 #include <iostream>
-
-//UI32 RenderManager::NEXT_RENDER_COMPONENT_ID = 1;
 
 bool RenderManager::init(int width, int height)
 {
@@ -21,7 +18,7 @@ bool RenderManager::init(int width, int height)
 	if(!initGL())
 		return false;
 
-	if(!m_texturesPool.init(10))
+	if(!m_texturesPool.init(100))
 		return false;
 
 	if(!m_geometricPool.init(100000))
@@ -49,6 +46,11 @@ bool RenderManager::initSDL()
 	if(SDL_InitSubSystem(SDL_INIT_VIDEO))
 	{
 		LOG(ERROR, "SDL init error: " << SDL_GetError());
+		return false;
+	}
+	if(!IMG_Init(IMG_INIT_JPG | IMG_INIT_PNG | IMG_INIT_TIF))
+	{
+		LOG(ERROR, "SDL_Image init error: " << SDL_GetError());
 		return false;
 	}
 
@@ -131,10 +133,78 @@ void RenderManager::setMatrixUniform(const char* uniformName, const Matrix4& val
 	glUniformMatrix4fv(uniformId, 1, true, value.m_data);
 }
 
+void RenderManager::setModelViewMatrixUniform(const char* uniformName, const Matrix4& model)
+{
+	int uniformId = glGetUniformLocation(m_defaultShader.getProgram(), uniformName);
+	const Matrix4 modelView = model * m_defaultCameraTransform->getInverseMatrix();
+	glUniformMatrix4fv(uniformId, 1, true, modelView.m_data);
+}
+
+void RenderManager::setModelViewProjectionMatrixUniform(const char* modelViewName,
+		 const char* modelViewProjName, Matrix4& model)
+{
+	int modelViewId = glGetUniformLocation(m_defaultShader.getProgram(), modelViewName);
+	int modelViewProjId = glGetUniformLocation(m_defaultShader.getProgram(), 
+							modelViewProjName);
+
+	if(m_defaultCamera->m_dirty)
+	{
+		buildDefaultProjectionMatrix();
+	}
+
+	const Matrix4 modelView = model * m_defaultCameraTransform->getInverseMatrix();
+	const Matrix4 modelViewProj = modelView * m_defaultCamera->m_projectionMatrix;
+
+	glUniformMatrix4fv(modelViewId, 1, true, modelView.m_data);
+	glUniformMatrix4fv(modelViewProjId, 1, true, modelViewProj.m_data);
+}
+
+void RenderManager::buildDefaultProjectionMatrix()
+{
+	float ymax = m_defaultCamera->m_nearDistance * tanf(m_defaultCamera->m_fov/2);
+	float xmax = ymax*m_defaultCamera->m_aspectRatio;
+
+	float temp = 2 * m_defaultCamera->m_nearDistance;
+	float temp2 = 2 * xmax;
+	float temp3 = 2 * ymax;
+	float temp4 = m_defaultCamera->m_farDistance - m_defaultCamera->m_nearDistance;
+
+	m_defaultCamera->m_projectionMatrix.m_data[0] = temp / temp2;
+	m_defaultCamera->m_projectionMatrix.m_data[1] = 0;
+	m_defaultCamera->m_projectionMatrix.m_data[2] = 0;
+	m_defaultCamera->m_projectionMatrix.m_data[3] = 0;
+
+	m_defaultCamera->m_projectionMatrix.m_data[4] = 0;
+	m_defaultCamera->m_projectionMatrix.m_data[5] = temp / temp3;
+	m_defaultCamera->m_projectionMatrix.m_data[6] = 0;
+	m_defaultCamera->m_projectionMatrix.m_data[7] = 0;
+
+	m_defaultCamera->m_projectionMatrix.m_data[8] = 0;
+	m_defaultCamera->m_projectionMatrix.m_data[9] = 0;
+	m_defaultCamera->m_projectionMatrix.m_data[10] = - (m_defaultCamera->m_farDistance + m_defaultCamera->m_nearDistance) / temp4;
+	m_defaultCamera->m_projectionMatrix.m_data[11] = -1;//(-temp * m_farDistance) / temp4;
+
+	m_defaultCamera->m_projectionMatrix.m_data[12] = 0;
+	m_defaultCamera->m_projectionMatrix.m_data[13] = 0;
+	m_defaultCamera->m_projectionMatrix.m_data[14] = (-temp * m_defaultCamera->m_farDistance) / temp4;//-1;
+	m_defaultCamera->m_projectionMatrix.m_data[15] = 0;
+
+	m_defaultCamera->m_dirty = false;
+}
+
 void RenderManager::render(Geometric* geometric)
 {
 	if(!geometric->m_isInitialised)
 		return;
+
+	if(geometric->m_texture != nullptr)
+	{
+		if(geometric->m_texture->m_isInitialised)
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, geometric->m_texture->m_id);
+		}
+	}
 
 	glBindVertexArray(geometric->m_vao);
 	glDrawElements(GL_TRIANGLES, geometric->m_numIndices, GL_UNSIGNED_INT, 0);
@@ -148,10 +218,62 @@ void RenderManager::postRender()
 	glPopAttrib();
 }
 
-Texture* RenderManager::createTextureFromImg(const char* imgPath)
+void RenderManager::setDefaultCamera(CameraComponent* camera)
 {
-	ASSERT(true, "Unimplemented method call: RenderManager.createTextureFromImg");
-	return nullptr;
+	GetTransformMessage message;
+	message.setHandled(false);
+	message.setEntityHandler(camera->m_entity);
+	
+	Engine::g_entityManager.sendMessage(&message);
+	
+	if(message.isHandled())
+	{
+		m_defaultCamera = camera;
+		m_defaultCameraTransform = message.getTransform();
+	}
+	else
+	{
+		LOG(WARN, "Default camera: "<<camera->m_entity<<" should have a position component");
+	}
+
+}
+
+CameraComponent* RenderManager::getDefaultCamera()
+{
+	return m_defaultCamera;
+}
+
+Texture* RenderManager::createTextureFromImg(std::string imgPath)
+{
+	Texture* texture = m_texturesPool.create();
+	SDL_Surface* surface = IMG_Load(imgPath.c_str());
+
+	int mode = GL_RGB;
+ 
+	if(surface->format->BytesPerPixel == 4) {
+	    mode = GL_RGBA;
+	}
+
+	glGenTextures(1, &texture->m_id);
+	glBindTexture(GL_TEXTURE_2D, texture->m_id);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexImage2D(GL_TEXTURE_2D, 0, mode, surface->w, surface->h, 0,
+    	mode, GL_UNSIGNED_BYTE, surface->pixels);
+    glBindTexture(GL_TEXTURE_2D,0);
+
+    texture->m_width = surface->w;
+    texture->m_height = surface->h;
+
+    SDL_FreeSurface(surface);
+
+    texture->m_isInitialised = true;
+
+    // std::cout<<"Id: "<<texture->m_id<<" Address: "<<texture<<std::endl;
+
+    return texture;
 }
 
 void RenderManager::updateTextureFromText(Texture* texture,
@@ -266,6 +388,7 @@ Geometric* RenderManager::createGeometric(const std::vector<Vertex> vertices,
 
 	geometric->m_numIndices = indices.size();
 	geometric->m_isInitialised = true;
+	geometric->m_texture = nullptr;
 
 	return geometric;
 }

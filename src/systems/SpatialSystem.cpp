@@ -85,7 +85,7 @@ Component* SpatialSystem::createFromJSON(const rapidjson::Value& jsonObject)
 			scale.m_data[0] = itMember->value[0u].GetDouble();
 			scale.m_data[1] = itMember->value[1].GetDouble();
 			scale.m_data[2] = itMember->value[2].GetDouble();
-			spatial->m_transform.translate(scale);	
+			spatial->m_transform.scale(scale);	
 		}
 	}
 

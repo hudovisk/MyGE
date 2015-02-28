@@ -79,7 +79,7 @@ bool Engine::init()
 
 void Engine::start()
 {
-	g_entityManager.loadEntities("res/scripts/entities.json");
+	//g_entityManager.loadEntities("res/scripts/entities.json");
 	// g_entityManager.loadPlayer("res/models/monkey.obj");
 	// for(int i=0; i<99; i++)
 	// 	g_entityManager.loadEntity("res/models/monkey.obj");

@@ -3,7 +3,7 @@
 #include "render/Shader.h"
 #include "debug/Logger.h"
 
-bool Shader::init(char* vertexFilePath, char* fragmentFilePath)
+bool Shader::init(std::string vertexFilePath, std::string fragmentFilePath)
 {
 	if(m_initialised)
 		destroy();
@@ -16,7 +16,7 @@ bool Shader::init(char* vertexFilePath, char* fragmentFilePath)
 	GLuint fragmentShaderId = glCreateShader(GL_FRAGMENT_SHADER);
 
 	//Load vertex shader code
-	FILE *vertexFile = fopen(vertexFilePath, "rb");
+	FILE *vertexFile = fopen(vertexFilePath.c_str(), "rb");
 	if(!vertexFile)
 	{
 		LOG(ERROR, "Could not open vertex shader file: "<<vertexFilePath);
@@ -37,7 +37,7 @@ bool Shader::init(char* vertexFilePath, char* fragmentFilePath)
 	fread(vertexFileBuffer, vertexFileSize, 1, vertexFile);
 
 	//Load fragment shader code
-	FILE *fragmentFile = fopen(fragmentFilePath, "rb");
+	FILE *fragmentFile = fopen(fragmentFilePath.c_str(), "rb");
 	if(!fragmentFile)
 	{
 		LOG(ERROR, "Could not open fragment shader file: "<<fragmentFilePath);

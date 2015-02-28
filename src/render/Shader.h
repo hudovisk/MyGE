@@ -9,11 +9,11 @@ class Shader
 {
 public:
 	Shader()
-		: m_vertexFilePath(NULL), m_fragmentFilePath(NULL), m_program(0),
+		: m_vertexFilePath(""), m_fragmentFilePath(""), m_program(0),
 		  m_initialised(false) { }
 	~Shader() { destroy(); }
 
-	bool init(char* vertexFilePath, char* fragmentFilePath);
+	bool init(std::string vertexFilePath, std::string fragmentFilePath);
 	bool destroy();
 
 	unsigned int getProgram() { return m_program; }
@@ -22,8 +22,8 @@ public:
 
 private:
 
-	char* m_vertexFilePath;
-	char* m_fragmentFilePath;
+	std::string m_vertexFilePath;
+	std::string m_fragmentFilePath;
 
 	unsigned int m_program;
 	bool m_initialised;

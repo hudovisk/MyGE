@@ -6,10 +6,11 @@
 #include "systems/InputSystem.h"
 #include "systems/MovementSystem.h"
 #include "systems/PlayerControllerSystem.h"
-
+#include "systems/CameraSystem.h"
+#include "debug/MyAssert.h"
 #include "core/Engine.h"
 
-#include "rapidjson/document.h"
+
 
 #include <iostream>
 
@@ -36,6 +37,7 @@ bool EntityManager::init()
 	m_systems["InputSystem"] = new InputSystem();
 	m_systems["MovementSystem"] = new MovementSystem();
 	m_systems["PlayerControllerSystem"] = new PlayerControllerSystem();
+	m_systems["CameraSystem"] = new CameraSystem();
 
 	for(auto itSystem = m_systems.begin(); itSystem != m_systems.end(); itSystem++)
 	{
@@ -45,6 +47,32 @@ bool EntityManager::init()
 			return false;
 		}
 	}
+
+	char* buffer = getFileBuffer("res/scripts/config.json");
+	rapidjson::Document doc;
+	doc.Parse<0>(buffer);
+
+	ASSERT(doc.IsObject(), "Wrong JSON format, config.json must be an object.");
+	ASSERT(doc.HasMember("entities"), "Wrong JSON format, config.json must have entities member.");
+
+	loadEntities(doc["entities"].GetString());
+
+	for(auto itConfig = doc.MemberBegin(); 
+		itConfig != doc.MemberEnd(); itConfig++)
+	{
+		if(strcmp("defaultCamera", itConfig->name.GetString()) == 0)
+		{
+			auto itFind = m_entitiesNames.find(itConfig->value.GetString());
+			ASSERT(itFind != m_entitiesNames.end(), "defaultCamera value doest not exists.");
+
+			auto itComponent = m_entities[itFind->second].find("CameraSystem");
+			ASSERT(itComponent != m_entities[itFind->second].end(), "defaultCamera does not have a camera component.");
+
+			Engine::g_renderManager.setDefaultCamera(
+				dynamic_cast<CameraComponent*> (itComponent->second));
+		}
+	}
+	free(buffer);
 
 	m_isInitialised = true;
 
@@ -80,10 +108,10 @@ bool EntityManager::destroy()
 	return true;
 }
 
-void EntityManager::loadEntities(std::string filePath)
+char* EntityManager::getFileBuffer(std::string filePath)
 {
 	FILE* file = fopen(filePath.c_str(), "rb");
-	// ASSERT(file != nullptr, "Couldn't open file: "<<filePath);
+	ASSERT(file != nullptr, "Couldn't open file: "<<filePath);
 	fseek(file, 0L, SEEK_END);
 	unsigned int size = ftell(file);
 
@@ -95,9 +123,17 @@ void EntityManager::loadEntities(std::string filePath)
 		// LOG(ERROR, "File: "<<json<<" too big");
 		fclose(file);
 
-		// ASSERT(false,"File: "<<filePath<<" too big");
+		ASSERT(false,"File: "<<filePath<<" too big");
 	}
 	fread(buffer, 1, size, file);
+	fclose(file);
+
+	return buffer;
+}
+
+void EntityManager::loadEntities(std::string filePath)
+{
+	char* buffer = getFileBuffer(filePath);
 
 	rapidjson::Document doc;
 	doc.Parse<0>(buffer);
@@ -110,7 +146,8 @@ void EntityManager::loadEntities(std::string filePath)
 		{
 			if(strcmp("name", itMember->name.GetString()) == 0)
 			{
-				LOG(INFO, "Loading entity id: "<<entity<<"Name: "<<itMember->value.GetString());
+				LOG(INFO, "Loading entity id: "<<entity<<" Name: "<<itMember->value.GetString());
+				m_entitiesNames[itMember->value.GetString()] = entity;
 			}
 			else
 			{
@@ -125,8 +162,7 @@ void EntityManager::loadEntities(std::string filePath)
 		}
 	}
 
-	free(buffer);
-	fclose(file);
+	free(buffer);	
 }
 
 void EntityManager::loadEntity(const char* filePath)

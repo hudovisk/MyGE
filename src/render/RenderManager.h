@@ -9,9 +9,12 @@
 
 #include "memory/ObjectPool.h"
 
-#include "math/Matrix4.h"
+#include "math/Transform.h"
+
+#include "systems/CameraSystem.h"
 
 #include <SDL2/SDL.h>
+#include <SDL2/SDL_image.h>
 #include <GL/glew.h>
 
 #include <vector>
@@ -50,9 +53,16 @@ public:
 	void postRender();
 
 	void bindDefaultShader();
+
+	void setDefaultCamera(CameraComponent* entity);
+	CameraComponent* getDefaultCamera();
+
 	// void BindShader(Shader shader);
 
 	void setMatrixUniform(const char* uniformName, const Matrix4& value);
+	void setModelViewMatrixUniform(const char* uniformName, const Matrix4& value);
+	void setModelViewProjectionMatrixUniform(const char* modelViewName,
+		 const char* modelViewProjName, Matrix4& model);
 
 	/**
 	 * @brief Initiale texture from image.
@@ -63,7 +73,7 @@ public:
 	 * 
 	 * @todo implement using SDL_Image
 	 */
-	Texture* createTextureFromImg(const char* imgPath);
+	Texture* createTextureFromImg(std::string imgPath);
 
 	/**
 	 * @brief Initialise texture from SDL_TTF font.
@@ -132,6 +142,8 @@ private:
 	bool initSDL();
 	bool initGL();
 
+	void buildDefaultProjectionMatrix();
+
 	SDL_Window* m_window;
 	SDL_Surface* m_screenSurface;
 	SDL_GLContext m_glContext;
@@ -139,6 +151,9 @@ private:
 	int m_width, m_height;
 
 	Shader m_defaultShader;
+
+	CameraComponent* m_defaultCamera;
+	Transform* m_defaultCameraTransform;
 
 	ObjectPool<Texture> m_texturesPool;
 	ObjectPool<Geometric> m_geometricPool;

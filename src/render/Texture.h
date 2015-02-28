@@ -11,6 +11,10 @@
 class Texture
 {
 public:
+	Texture() 
+		: m_id(0), m_width(0), m_height(0),
+		m_isInitialised(false) { }
+
 	unsigned int m_id;
 
 	float m_width;

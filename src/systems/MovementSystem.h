@@ -22,6 +22,10 @@ private:
 	MovementSystem* m_system;
 	float m_maxVelocity;
 	float m_currentVelocity;
+	
+	float m_maxRotationalVelocity;
+	float m_currentRotationalVelocity;
+
 	Vec3 m_localDirection;
 };
 
