@@ -5,6 +5,8 @@
 #include "render/RenderManager.h"
 #include "debug/DebugRenderManager.h"
 #include "core/EntityManager.h"
+
+#include "events/InputContext.h"
 /**
  * @brief EngineState enum
  * @details Represents the possible states the engine can be.
@@ -81,15 +83,26 @@ private:
 	void update(float updateTime);
 	void render();
 
+	enum INPUT_MESSAGES
+	{
+		TOGGLE_DRAW_GBUFFER = 1,
+		TOGGLE_DRAW_FPS = 2,
+		TOGGLE_PAUSE = 3,
+		EXIT = 4,
+	};
+
 	EngineState m_state;
 
 	std::shared_ptr<UpdateStageEventData> m_updateStageEvent;
 	IEventDataPtr m_preRenderStageEvent;
-	IEventDataPtr m_renderStageEvent;
+	IEventDataPtr m_render1stStageEvent;
+	IEventDataPtr m_render2ndStageEvent;
 	IEventDataPtr m_postRenderStageEvent;
 
+	InputContext m_inputContext;
 
 	bool m_initialised;
+	bool m_drawGBuffer;
 };
 
 #endif

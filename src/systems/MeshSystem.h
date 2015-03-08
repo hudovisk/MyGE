@@ -4,6 +4,7 @@
 
 #include "systems/System.h"
 #include "render/Geometric.h"
+#include "render/Shader.h"
 #include "memory/ObjectPool.h"
 #include "events/Events.h"
 
@@ -42,6 +43,8 @@ private:
 	void loadFile(MeshComponent* mesh, std::string filePath);
 
 	bool m_isInitialised;
+
+	Shader m_shader;
 
 	GetTransformMessage m_getTransformMsg;
 

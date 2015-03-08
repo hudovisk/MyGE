@@ -1,0 +1,5 @@
+{
+	"entities" : "res/scripts/entities.json",
+
+	"defaultCamera" : "camera"
+}

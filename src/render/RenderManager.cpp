@@ -24,13 +24,6 @@ bool RenderManager::init(int width, int height)
 	if(!m_geometricPool.init(100000))
 		return false;
 
-	if(!m_defaultShader.init("res/shaders/vertex.glsl", 
-		"res/shaders/fragment.glsl"))
-	{
-		LOG(ERROR, "Default RenderManager shader could not initialise.");
-		return false;
-	}
-
 	WindowResizedEventData windowResizedEventData;
 	Engine::g_eventManager.addListenner(
 		EventListenerDelegate::from_method
@@ -63,7 +56,7 @@ bool RenderManager::initSDL()
 	//Update the surface
 	SDL_UpdateWindowSurface( m_window );
 
-	// SDL_SetRelativeMouseMode((SDL_bool) true);
+	SDL_SetRelativeMouseMode((SDL_bool) true);
 
 	LOG(INFO, "SDL initialized");
 
@@ -86,19 +79,57 @@ bool RenderManager::initGL()
 
 	glViewport(0,0,m_width,m_height);
 
-	glEnable(GL_CULL_FACE);
-	glFrontFace(GL_CW);
-	glCullFace(GL_FRONT);
+	// Create the FBO (Draws off screen, into the FBO)
+    glGenFramebuffers(1, &m_gbFbo); 
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_gbFbo);
 
-	glEnable(GL_DEPTH_TEST);
-	glEnable(GL_BLEND);
-	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+	// Create the gbuffer textures (Create and attach texts to FBO)
+  	glGenTextures(GBUFFER_NUM_TEXTURES, m_gbTextures);
+  	glGenTextures(1, &m_gbDepthTexture);
+  	for (unsigned int i = 0 ; i < GBUFFER_NUM_TEXTURES; i++) {
+		glBindTexture(GL_TEXTURE_2D, m_gbTextures[i]);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+    	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, m_width, m_height, 
+			0, GL_RGB, GL_FLOAT, NULL);
+		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, 
+			GL_TEXTURE_2D, m_gbTextures[i], 0);
+	}
+
+	// Same as before but for depth. DepthTexture is attached differently
+	glBindTexture(GL_TEXTURE_2D, m_gbDepthTexture);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width, m_height, 0, 
+		GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+		m_gbDepthTexture, 0);
+
+	//Enable the attached textures to be written.
+	GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, 
+		GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 }; 
+    glDrawBuffers(4, drawBuffers);
+
+    GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+    if (Status != GL_FRAMEBUFFER_COMPLETE) {
+        LOG(ERROR, "Framebuffer Object creation error, status: "<<Status);
+        return false;
+    }
+
+    //Restore default FBO.
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
 
 	return true;
 }
 
 bool RenderManager::destroy()
 {
+	//GBuffer cleanup
+	glDeleteTextures(GBUFFER_NUM_TEXTURES, m_gbTextures);
+	glDeleteTextures(1, &m_gbDepthTexture);
+	glDeleteFramebuffers(1, &m_gbFbo);
+	
 	SDL_DestroyWindow( m_window );
 
 	SDL_QuitSubSystem(SDL_INIT_VIDEO);
@@ -106,57 +137,100 @@ bool RenderManager::destroy()
 	return true;
 }
 
-void RenderManager::preRender()
+void RenderManager::preRender1st()
 {
-	//CLEAR
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	//Screen to gbuffer
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_gbFbo);
+    // Only the geometry pass updates the depth buffer
+    glDepthMask(GL_TRUE);
 
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
 	glCullFace(GL_FRONT);
-
-	glEnable(GL_DEPTH_TEST);
 
 	glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT   | GL_ENABLE_BIT  |
 	             GL_TEXTURE_BIT      | GL_TRANSFORM_BIT | GL_VIEWPORT_BIT);
 }
 
-
-void RenderManager::bindDefaultShader()
+void RenderManager::preRender2nd()
 {
-	glUseProgram(m_defaultShader.getProgram());
-}
+	glDepthMask(GL_FALSE);
+	glDisable(GL_DEPTH_TEST);
+	glDisable(GL_CULL_FACE);
+	glEnable(GL_BLEND);
+   	glBlendEquation(GL_FUNC_ADD);
+   	glBlendFunc(GL_ONE, GL_ONE);
+	//Restore default FBO(Screen)
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//CLEAR
+	glClear(GL_COLOR_BUFFER_BIT);
 
-void RenderManager::setMatrixUniform(const char* uniformName, const Matrix4& value)
-{
-	int uniformId = glGetUniformLocation(m_defaultShader.getProgram(), uniformName);
-	glUniformMatrix4fv(uniformId, 1, true, value.m_data);
-}
+	//Read from GBuffer
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbFbo);
 
-void RenderManager::setModelViewMatrixUniform(const char* uniformName, const Matrix4& model)
-{
-	int uniformId = glGetUniformLocation(m_defaultShader.getProgram(), uniformName);
-	const Matrix4 modelView = model * m_defaultCameraTransform->getInverseMatrix();
-	glUniformMatrix4fv(uniformId, 1, true, modelView.m_data);
-}
-
-void RenderManager::setModelViewProjectionMatrixUniform(const char* modelViewName,
-		 const char* modelViewProjName, Matrix4& model)
-{
-	int modelViewId = glGetUniformLocation(m_defaultShader.getProgram(), modelViewName);
-	int modelViewProjId = glGetUniformLocation(m_defaultShader.getProgram(), 
-							modelViewProjName);
-
-	if(m_defaultCamera->m_dirty)
+	for(unsigned int i=0; i < GBUFFER_NUM_TEXTURES; i++)
 	{
-		buildDefaultProjectionMatrix();
+		glActiveTexture(GL_TEXTURE0 + i);
+		glBindTexture(GL_TEXTURE_2D, m_gbTextures[i]);
+	}
+}
+
+void RenderManager::renderGBuffer()
+{
+	GLsizei HalfWidth = (GLsizei)(m_width / 2.0f);
+    GLsizei HalfHeight = (GLsizei)(m_height / 2.0f);
+
+	glReadBuffer(GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_POSITION);
+	glBlitFramebuffer(0, 0, m_width, m_height, 
+		0, 0, HalfWidth, HalfHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_DIFFUSE);
+    glBlitFramebuffer(0, 0, m_width, m_height, 
+    	0, HalfHeight, HalfWidth, m_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_NORMAL);
+    glBlitFramebuffer(0, 0, m_width, m_height, 
+        HalfWidth, HalfHeight, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_TEXCOORD);
+    glBlitFramebuffer(0, 0, m_width, m_height, 
+        HalfWidth, 0, m_width, HalfHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);	
+}
+
+void RenderManager::render(Geometric* geometric)
+{
+	if(!geometric->m_isInitialised)
+		return;
+
+	if(geometric->m_texture != nullptr)
+	{
+		if(geometric->m_texture->m_isInitialised)
+		{
+			glActiveTexture(GL_TEXTURE0);
+			glBindTexture(GL_TEXTURE_2D, geometric->m_texture->m_id);
+		}
 	}
 
-	const Matrix4 modelView = model * m_defaultCameraTransform->getInverseMatrix();
-	const Matrix4 modelViewProj = modelView * m_defaultCamera->m_projectionMatrix;
+	glBindVertexArray(geometric->m_vao);
+	glDrawElements(GL_TRIANGLES, geometric->m_numIndices, GL_UNSIGNED_INT, 0);
+}
 
-	glUniformMatrix4fv(modelViewId, 1, true, modelView.m_data);
-	glUniformMatrix4fv(modelViewProjId, 1, true, modelViewProj.m_data);
+void RenderManager::postRender()
+{
+	//SWAP BUFFERS
+	SDL_GL_SwapWindow(m_window);
+
+	glPopAttrib();
+}
+
+void RenderManager::bindShader(const Shader& shader)
+{
+	glUseProgram(shader.m_program);
 }
 
 void RenderManager::buildDefaultProjectionMatrix()
@@ -192,32 +266,6 @@ void RenderManager::buildDefaultProjectionMatrix()
 	m_defaultCamera->m_dirty = false;
 }
 
-void RenderManager::render(Geometric* geometric)
-{
-	if(!geometric->m_isInitialised)
-		return;
-
-	if(geometric->m_texture != nullptr)
-	{
-		if(geometric->m_texture->m_isInitialised)
-		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, geometric->m_texture->m_id);
-		}
-	}
-
-	glBindVertexArray(geometric->m_vao);
-	glDrawElements(GL_TRIANGLES, geometric->m_numIndices, GL_UNSIGNED_INT, 0);
-}
-
-void RenderManager::postRender()
-{
-	//SWAP BUFFERS
-	SDL_GL_SwapWindow(m_window);
-
-	glPopAttrib();
-}
-
 void RenderManager::setDefaultCamera(CameraComponent* camera)
 {
 	GetTransformMessage message;
@@ -238,9 +286,18 @@ void RenderManager::setDefaultCamera(CameraComponent* camera)
 
 }
 
-CameraComponent* RenderManager::getDefaultCamera()
+const Matrix4& RenderManager::getDefaultCameraProjection()
 {
-	return m_defaultCamera;
+	if(m_defaultCamera->m_dirty)
+	{
+		buildDefaultProjectionMatrix();
+	}
+	return m_defaultCamera->m_projectionMatrix;
+}
+
+Transform* RenderManager::getDefaultCameraTransform()
+{
+	return m_defaultCameraTransform;
 }
 
 Texture* RenderManager::createTextureFromImg(std::string imgPath)
@@ -415,14 +472,23 @@ void RenderManager::onWindowResize(IEventDataPtr e)
 	glViewport(0, 0, m_width, m_height);
 }
 
+void RenderManager::onEnginePaused()
+{
+	SDL_SetRelativeMouseMode((SDL_bool) false);	
+}
+
+void RenderManager::onEngineResumed()
+{
+	SDL_SetRelativeMouseMode((SDL_bool) true);		
+}
 
 // void RenderManager::onManagerPause(IEventDataPtr e)
 // {
-// 	SDL_SetRelativeMouseMode((SDL_bool) false);	
+// 	
 // }
 
 // void RenderManager::onManagerResume(IEventDataPtr e)
 // {
-// 	SDL_SetRelativeMouseMode((SDL_bool) true);		
+// 	
 // }
 

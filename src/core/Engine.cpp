@@ -12,7 +12,8 @@ DebugRenderManager Engine::g_debugRenderManager;
 EntityManager Engine::g_entityManager;
 
 Engine::Engine()
-	: m_state(EngineState::NOT_STARTED), m_initialised(false)
+	: m_state(EngineState::NOT_STARTED), m_initialised(false),
+	 m_drawGBuffer(false)
 {
 
 }
@@ -53,7 +54,7 @@ bool Engine::init()
 	if(!g_eventManager.init())
 		return false;
 
-	if(!g_renderManager.init(800,600))
+	if(!g_renderManager.init(800,800))
 		return false;
 
 	if(!g_debugRenderManager.init())
@@ -62,14 +63,19 @@ bool Engine::init()
 	if(!g_entityManager.init())
 		return false;
 
+	if(!m_inputContext.init("res/scripts/engineInput.xml"))
+		return false;
+
 	LOG(INFO, "Engine initialised");
 
-	g_eventManager.addListenner(EventListenerDelegate::from_method<Engine,&Engine::onWindowClosed>(this),
-															(new WindowClosedEventData)->getType());
+	WindowClosedEventData event;
+	g_eventManager.addListenner(EventListenerDelegate::from_method<Engine,
+		&Engine::onWindowClosed>(this),	event.getType());
 
 	m_updateStageEvent = std::make_shared<UpdateStageEventData>(0);
 	m_preRenderStageEvent = std::make_shared<PreRenderStageEventData>(0);
-	m_renderStageEvent = std::make_shared<RenderStageEventData>(0);
+	m_render1stStageEvent = std::make_shared<Render1stStageEventData>(0);
+	m_render2ndStageEvent = std::make_shared<Render2ndStageEventData>(0);
 	m_postRenderStageEvent = std::make_shared<PostRenderStageEventData>(0);
 
 	m_initialised = true;
@@ -79,11 +85,6 @@ bool Engine::init()
 
 void Engine::start()
 {
-	//g_entityManager.loadEntities("res/scripts/entities.json");
-	// g_entityManager.loadPlayer("res/models/monkey.obj");
-	// for(int i=0; i<99; i++)
-	// 	g_entityManager.loadEntity("res/models/monkey.obj");
-
 	float lastTime = Platform::getHighResTime();
 	float currentTime = lastTime;
 	float updateTime = 0;
@@ -126,16 +127,59 @@ void Engine::start()
 void Engine::update(float updateTime)
 {
 	m_updateStageEvent->setDeltaT(updateTime);
-	g_eventManager.triggerEvent(m_updateStageEvent);
+
+	std::vector<InputParsed> inputs = m_inputContext.parse(g_eventManager.getInputQueue());
+	for(unsigned int i = 0; i < inputs.size(); i++)
+	{
+		switch(inputs[i].id)
+		{
+			case TOGGLE_DRAW_GBUFFER:
+				m_drawGBuffer = !m_drawGBuffer;
+				break;
+			case TOGGLE_DRAW_FPS:
+				g_debugRenderManager.renderFps(!g_debugRenderManager.isRenderFps());
+				break;
+			case TOGGLE_PAUSE:
+				if(m_state == EngineState::RUNNING)
+				{
+					g_renderManager.onEnginePaused();
+					m_state = EngineState::PAUSED;	
+				} 
+				else if(m_state == EngineState::PAUSED)
+				{
+					g_renderManager.onEngineResumed();
+					m_state = EngineState::RUNNING;
+				} 
+				break;
+			case EXIT:
+				m_state = EngineState::EXITED;
+				break;
+		}
+	}
+
+	if(m_state == EngineState::RUNNING)
+		g_eventManager.triggerEvent(m_updateStageEvent);
 }
 
 void Engine::render()
 {
 	g_eventManager.triggerEvent(m_preRenderStageEvent);
-	g_renderManager.preRender();
+	
+	//Geometric pass
+	g_renderManager.preRender1st();
+	g_eventManager.triggerEvent(m_render1stStageEvent);
 
-	g_eventManager.triggerEvent(m_renderStageEvent);
-	// g_renderManager.render(meshes);
+	//Light pass
+	g_renderManager.preRender2nd();
+	if(m_drawGBuffer)
+	{
+		g_renderManager.renderGBuffer();	
+	}
+	else
+	{
+		g_eventManager.triggerEvent(m_render2ndStageEvent);
+	}
+
 	g_debugRenderManager.render();
 
 	g_renderManager.postRender();

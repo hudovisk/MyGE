@@ -35,7 +35,13 @@ bool MeshSystem::init()
 		return false;
 	}
 
-	RenderStageEventData event;
+	if(!m_shader.init("res/shaders/vertex.glsl", "res/shaders/fragment.glsl"))
+	{
+		LOG(ERROR, "Default MeshSystem shader could not initialise.");
+		return false;
+	}
+
+	Render1stStageEventData event;
 	Engine::g_eventManager.addListenner(
 		EventListenerDelegate::from_method<MeshSystem,&MeshSystem::onUpdate>(this),
 		event.getType());
@@ -49,6 +55,12 @@ bool MeshSystem::destroy()
 {
 	if(m_isInitialised)
 	{
+		Render1stStageEventData event;
+		Engine::g_eventManager.removeListenner(
+			EventListenerDelegate::from_method<MeshSystem,&MeshSystem::onUpdate>(this),
+			event.getType());
+
+		m_shader.destroy();
 		m_componentPool.destroy();
 		m_isInitialised = false;
 	}
@@ -60,24 +72,32 @@ void MeshSystem::onUpdate(IEventDataPtr e)
 	MeshComponent** meshes = m_componentPool.getUsedBufferCache();
 	unsigned int numMeshes = m_componentPool.getUsedSize();
 
+	Engine::g_renderManager.bindShader(m_shader);
+
+	const Matrix4& invCamera = 
+		Engine::g_renderManager.getDefaultCameraTransform()->getInverseMatrix();
+	const Matrix4& projection = Engine::g_renderManager.getDefaultCameraProjection();
 	for(unsigned int i=0; i<numMeshes; i++)
 	{
 		MeshComponent* mesh = meshes[i];
 
+		m_getTransformMsg.setHandled(false);
 		m_getTransformMsg.setEntityHandler(mesh->m_entity);
 		Engine::g_entityManager.sendMessage(&m_getTransformMsg);
 
 		if(!m_getTransformMsg.isHandled())
 		{
-			LOG(ERROR, "Entity id: "<<mesh->m_entity<<" does not have a transform component.");
+			LOG(ERROR, "Entity id: "<<mesh->m_entity<<
+				" does not have a transform component.");
 			continue;
 		}
 		Transform* transform = m_getTransformMsg.getTransform();
+		
+		const Matrix4 modelView = transform->getMatrix() * invCamera;
 
-		Engine::g_renderManager.bindDefaultShader();
-		// Engine::g_renderManager.setModelViewMatrixUniform("modelView_Matrix", transform->getMatrix());
-		Engine::g_renderManager.setModelViewProjectionMatrixUniform(
-			"modelView_Matrix", "modelViewProjection_Matrix", transform->getMatrix());
+		m_shader.setMatrix4f("model_Matrix", transform->getMatrix());
+		m_shader.setMatrix4f("modelView_Matrix", modelView);
+		m_shader.setMatrix4f("modelViewProjection_Matrix", modelView * projection);
 
 		for(unsigned int j=0; j<mesh->m_geometrics.size(); j++)
 		{

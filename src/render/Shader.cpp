@@ -120,9 +120,43 @@ bool Shader::init(std::string vertexFilePath, std::string fragmentFilePath)
 	return true;
 }
 
+void Shader::setMatrix4f(std::string uniformName, const Matrix4& value)
+{
+	int uniformId = glGetUniformLocation(m_program, uniformName.c_str());
+	glUniformMatrix4fv(uniformId, 1, true, value.m_data);
+}
+
+void Shader::setVec3f(std::string uniformName, const Vec3& value)
+{
+	int uniformId = glGetUniformLocation(m_program, uniformName.c_str());
+	glUniform3f(uniformId, value.m_data[0], value.m_data[1], value.m_data[2]);
+}
+
+void Shader::set1i(std::string uniformName, const int value)
+{
+	int uniformId = glGetUniformLocation(m_program, uniformName.c_str());
+	glUniform1i(uniformId, value);	
+}
+
+void Shader::set1f(std::string uniformName, const float value)
+{
+	int uniformId = glGetUniformLocation(m_program, uniformName.c_str());
+	glUniform1f(uniformId, value);	
+}
+
+void Shader::set2f(std::string uniformName, const float value, const float value2)
+{
+	int uniformId = glGetUniformLocation(m_program, uniformName.c_str());
+	glUniform2f(uniformId, value, value2);	
+}
+
 bool Shader::destroy()
 {
-	glDeleteProgram(m_program);
+	if(m_initialised)
+	{
+		glDeleteProgram(m_program);	
+		m_initialised = false;
+	}
 
 	return true;
 }

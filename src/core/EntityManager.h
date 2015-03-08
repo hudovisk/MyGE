@@ -21,9 +21,6 @@ public:
 	bool init();
 	bool destroy();
 
-	void loadEntity(const char* filePath);
-	void loadPlayer(const char* filePath);
-
 	void sendMessage(IMessageDataPtr message);
 
 private:

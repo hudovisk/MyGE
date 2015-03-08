@@ -74,13 +74,16 @@ bool DebugRenderManager::init()
 	initQuad();
 
 	for(int i=0; i<16; i++)
-		m_fpsTextureTransform[0] = 0;
+		m_fpsTextureMatrix.m_data[0] = 0;
 
-	m_fpsTextureTransform[0] = m_fpsTexture->m_width / Engine::g_renderManager.getWidth();
-	m_fpsTextureTransform[5] = m_fpsTexture->m_height / Engine::g_renderManager.getHeight();
+	m_fpsTextureMatrix.m_data[0] = m_fpsTexture->m_width / Engine::g_renderManager.getWidth();
+	m_fpsTextureMatrix.m_data[5] = m_fpsTexture->m_height / Engine::g_renderManager.getHeight();
 
-	m_fpsTextureTransform[10] = m_fpsTextureTransform[15] = 1;
-	m_fpsTextureTransform[3] = m_fpsTextureTransform[7] = -1.0;
+
+	m_fpsTextureMatrix.m_data[10] = m_fpsTextureMatrix.m_data[15] = 1.0;
+	m_fpsTextureMatrix.m_data[12] = -1.0;
+	m_fpsTextureMatrix.m_data[13] = -1.0;
+	m_fpsTextureMatrix.m_data[14] = 0.0;
 	m_isInitialised = true;
 
 	return true;
@@ -176,30 +179,24 @@ void DebugRenderManager::setFps(float fps)
 	Engine::g_renderManager.updateTextureFromText(m_fpsTexture,
 	 fpsString.c_str(), m_defaultFont, color);
 
-	m_fpsTextureTransform[0] = m_fpsTexture->m_width / Engine::g_renderManager.getWidth();
-	m_fpsTextureTransform[5] = m_fpsTexture->m_height / Engine::g_renderManager.getHeight();
+	m_fpsTextureMatrix.m_data[0] = m_fpsTexture->m_width / Engine::g_renderManager.getWidth();
+	m_fpsTextureMatrix.m_data[5] = m_fpsTexture->m_height / Engine::g_renderManager.getHeight();
 }
 
 void DebugRenderManager::render()
 {
 	if(!m_isRenderFps)
 		return;
-	glUseProgram(m_defaultShader.getProgram());
 
-	//glActiveTexture(GL_TEXTURE0);
+	glEnable(GL_BLEND);
+	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
+
+	glUseProgram(m_defaultShader.getProgram());
+	m_defaultShader.setMatrix4f("modelView_Matrix", m_fpsTextureMatrix);
+
+	glActiveTexture(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, m_fpsTexture->m_id);
 	glBindVertexArray(m_vaoQuad);
 	
-	int uniformModelView = glGetUniformLocation(m_defaultShader.getProgram(),
-							 "modelView_Matrix");
-	if(-1 != uniformModelView)
-	{
-		glUniformMatrix4fv(uniformModelView, 1, false, m_fpsTextureTransform);
-
-		glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // 3 indices starting at 0 -> 1 triangle
-	}
-	else
-	{
-		LOG(WARN,"modelView not found!");
-	}
+	glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0); // 3 indices starting at 0 -> 1 triangle
 }

@@ -115,7 +115,7 @@ void ObjectPool<T>::release(T* instance)
 	}
 	else
 	{
-		LOG(ERROR, "ObjectPool.release with invalid instance");
+		// LOG(ERROR, "ObjectPool.release with invalid instance");
 	}
 }
 

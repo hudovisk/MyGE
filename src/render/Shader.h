@@ -2,6 +2,9 @@
 #ifndef SHADER_H
 #define SHADER_H
 
+#include "math/Matrix4.h"
+#include "math/Vec3.h"
+
 #include <GL/glew.h>
 #include <string>
 
@@ -16,11 +19,18 @@ public:
 	bool init(std::string vertexFilePath, std::string fragmentFilePath);
 	bool destroy();
 
+	void setMatrix4f(std::string uniformName, const Matrix4& value);
+	void set1i(std::string uniformNamem, const int value);
+	void set1f(std::string uniformName, const float value);
+	void set2f(std::string uniformName, const float value, const float value2);
+	void setVec3f(std::string uniformName, const Vec3& value);
+
 	unsigned int getProgram() { return m_program; }
 
 	bool isInitialised() { return m_initialised; }
 
 private:
+	friend class RenderManager;
 
 	std::string m_vertexFilePath;
 	std::string m_fragmentFilePath;

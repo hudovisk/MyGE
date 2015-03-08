@@ -23,6 +23,7 @@ public:
 	void render();
 
 	void renderFps(bool isRenderFps);
+	bool isRenderFps() { return m_isRenderFps; }
 	void setFps(float fps);
 private:
 	void initQuad();
@@ -31,7 +32,7 @@ private:
 	Shader m_defaultShader;
 
 	Texture* m_fpsTexture;
-	float m_fpsTextureTransform[16];
+	Matrix4 m_fpsTextureMatrix;
 
 	unsigned int m_vaoQuad;
 	unsigned int m_vboQuad;

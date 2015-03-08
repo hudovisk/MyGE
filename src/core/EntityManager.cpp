@@ -7,6 +7,8 @@
 #include "systems/MovementSystem.h"
 #include "systems/PlayerControllerSystem.h"
 #include "systems/CameraSystem.h"
+#include "systems/LightSystem.h"
+
 #include "debug/MyAssert.h"
 #include "core/Engine.h"
 
@@ -38,6 +40,7 @@ bool EntityManager::init()
 	m_systems["MovementSystem"] = new MovementSystem();
 	m_systems["PlayerControllerSystem"] = new PlayerControllerSystem();
 	m_systems["CameraSystem"] = new CameraSystem();
+	m_systems["LightSystem"] = new LightSystem();
 
 	for(auto itSystem = m_systems.begin(); itSystem != m_systems.end(); itSystem++)
 	{
@@ -163,48 +166,6 @@ void EntityManager::loadEntities(std::string filePath)
 	}
 
 	free(buffer);	
-}
-
-void EntityManager::loadEntity(const char* filePath)
-{
-	// EntityHandler entity = EntityManager::NEXT_ID++;
-
-	// Component* mesh = m_systems["MeshSystem"]->createFromJSON(filePath);
-	// mesh->m_entity = entity;
-	// m_entities[entity].insert(std::pair<std::string, Component*>("MeshSystem", mesh));
-
-	// Component* spatial = m_systems["SpatialSystem"]->create();
-	// spatial->m_entity = entity;	
-	// m_entities[entity].insert(std::pair<std::string, Component*>("SpatialSystem", spatial));
-
-	// Component* movement = m_systems["MovementSystem"]->create();
-	// movement->m_entity = entity;
-	// m_entities[entity].insert(std::pair<std::string, Component*>("MovementSystem", movement));
-}
-
-void EntityManager::loadPlayer(const char* filePath)
-{
-	// EntityHandler entity = EntityManager::NEXT_ID++;
-
-	// Component* mesh = m_systems["MeshSystem"]->createFromJSON(filePath);
-	// mesh->m_entity = entity;
-	// m_entities[entity].insert(std::pair<std::string, Component*>("MeshSystem", mesh));
-
-	// Component* spatial = m_systems["SpatialSystem"]->create();
-	// spatial->m_entity = entity;	
-	// m_entities[entity].insert(std::pair<std::string, Component*>("SpatialSystem", spatial));
-
-	// Component* input = m_systems["InputSystem"]->createFromJSON("res/scripts/playerInputMap.xml");
-	// input->m_entity = entity;	
-	// m_entities[entity].insert(std::pair<std::string, Component*>("InputSystem", input));
-
-	// Component* movement = m_systems["MovementSystem"]->create();
-	// movement->m_entity = entity;
-	// m_entities[entity].insert(std::pair<std::string, Component*>("MovementSystem", movement));
-
-	// Component* player = m_systems["PlayerControllerSystem"]->create();
-	// player->m_entity = entity;
-	// m_entities[entity].insert(std::pair<std::string, Component*>("PlayerControllerSystem", player));	
 }
 
 void EntityManager::sendMessage(IMessageDataPtr message)

@@ -48,21 +48,17 @@ public:
 	 */
 	bool destroy();
 
-	void preRender();
+	void preRender1st();
+	void preRender2nd();
+	void renderGBuffer();
 	void render(Geometric* geometric);
 	void postRender();
 
-	void bindDefaultShader();
+	void bindShader(const Shader& shader);
 
 	void setDefaultCamera(CameraComponent* entity);
-	CameraComponent* getDefaultCamera();
-
-	// void BindShader(Shader shader);
-
-	void setMatrixUniform(const char* uniformName, const Matrix4& value);
-	void setModelViewMatrixUniform(const char* uniformName, const Matrix4& value);
-	void setModelViewProjectionMatrixUniform(const char* modelViewName,
-		 const char* modelViewProjName, Matrix4& model);
+	const Matrix4& getDefaultCameraProjection();
+	Transform* getDefaultCameraTransform();
 
 	/**
 	 * @brief Initiale texture from image.
@@ -126,6 +122,9 @@ public:
 	void releaseGeometric(Geometric* geometric);
 
 
+	void onEnginePaused();
+	void onEngineResumed();
+
 	/**
 	 * @brief Callback for WindowResize event.
 	 *  
@@ -137,6 +136,14 @@ public:
 
 	int getWidth() { return m_width; }
 	int getHeight() { return m_height; }
+
+	enum GBUFFER_TEXTURE_TYPE {
+		GBUFFER_TEXTURE_TYPE_POSITION,
+		GBUFFER_TEXTURE_TYPE_NORMAL,
+		GBUFFER_TEXTURE_TYPE_DIFFUSE,
+		GBUFFER_TEXTURE_TYPE_TEXCOORD,
+		GBUFFER_NUM_TEXTURES
+	};
 
 private:
 	bool initSDL();
@@ -150,7 +157,9 @@ private:
 
 	int m_width, m_height;
 
-	Shader m_defaultShader;
+	unsigned int m_gbFbo;
+	unsigned int m_gbTextures[GBUFFER_NUM_TEXTURES];
+	unsigned int m_gbDepthTexture;
 
 	CameraComponent* m_defaultCamera;
 	Transform* m_defaultCameraTransform;

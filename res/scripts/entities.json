@@ -1,0 +1,58 @@
+[
+	{
+		"name" : "sponza",
+		
+		"SpatialSystem" : {
+			"pos" : [0.0, 0.0, 0.0],
+			"scale" : [1, 1, 1]
+		},
+
+		"MeshSystem" : {
+			"file" : "res/models/crytek-sponza/sponza.obj"
+		}
+	},
+
+	{
+		"name" : "camera",
+
+		"SpatialSystem" : {
+			"pos" : [0.0, 0.0, 0.0],
+			"scale" : [1, 1, 1]
+		},
+
+		"MovementSystem" : {
+			"maxVelocity" : 100,
+			"currentVelocity" : 0,
+			"localDirection" : [0, 0, 0]
+		},
+
+		"InputSystem" : {
+			"file" : "res/scripts/playerInputMap.xml"
+		},
+
+		"CameraSystem" : {
+			"fov" : 90,
+			"nearDistance" : 1,
+			"farDistance" : 10000,
+			"aspectRatio" : 1,
+			"sensibility" : 0.01
+		}
+	},
+
+	{
+		"name" : "lamp",
+
+		"SpatialSystem" : {
+			"pos" : [0.0, 0.0, 0.0],
+			"scale" : [1.0, 1.0, 1.0]
+		},
+
+		"LightSystem" : {
+			"radius" : 10000,
+			"color" : [1.0, 1.0, 1.0],
+			"ambientIntensity" : 0.5,
+			"diffuseIntensity" : 1.0,
+			"type" : "point"
+		}
+	}
+]

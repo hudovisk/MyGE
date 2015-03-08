@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<context>
+  <message id="1">
+    <key value="Q" pressed="true"/>
+  </message>
+  
+  <message id="2">
+    <key value="2" pressed="true"/>
+  </message>
+
+  <message id="3">
+    <key value="1" pressed="true"/>
+  </message>
+
+  <message id="4">
+    <key value="ESC" pressed="true"/>
+  </message>
+</context>

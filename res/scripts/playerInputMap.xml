@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?> 
+<context>
+  <message id="1">
+    <key value="W" pressed="true"/>
+  </message>
+  
+  <message id="2">
+    <key value="W" pressed="false"/>
+    <key value="S" pressed="false"/>
+  </message>
+
+  <message id="3">
+    <mouse value="MOTION" pressed="false">
+      <x inverted="false" relative="true"/>
+      <y inverted="false" relative="true"/>
+    </mouse>
+  </message>
+  
+  <message id="4">
+  	<key value="A" pressed="true"/>
+  </message>
+  
+  <message id="5">
+  	<key value="D" pressed="true"/>
+  </message>
+  
+  <message id="6">
+  	<key value="A" pressed="false"/>
+  	<key value="D" pressed="false"/>
+  </message>
+  
+  <message id="7">
+  	<key value="S" pressed="true"/>
+  </message>
+</context>

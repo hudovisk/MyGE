@@ -15,7 +15,7 @@
 #include "events/InputTypes.h"
 #include "rapidxml-1.13/rapidxml.hpp"
 
-class InputMessage
+class InputParsed
 {
 public:
 	unsigned int id;
@@ -38,7 +38,7 @@ public:
 
 	bool init(std::string filename);
 
-	std::vector<InputMessage> parse(std::list<InputEvent>& input);
+	std::vector<InputParsed> parse(std::list<InputEvent>& input);
 private:
 
 	class MouseMapAttributes

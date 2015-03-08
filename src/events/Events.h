@@ -132,10 +132,10 @@ public:
 //	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
 };
 
-class RenderStageEventData : public BaseEventData
+class Render1stStageEventData : public BaseEventData
 {
 public:
-	RenderStageEventData(const float timeStamp = 0.0f) :
+	Render1stStageEventData(const float timeStamp = 0.0f) :
 		BaseEventData(timeStamp)
 	{
 
@@ -143,6 +143,21 @@ public:
 
 	//must be a diferent number!!
 	const unsigned int getType() const { return 6; }
+	
+//	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
+};
+
+class Render2ndStageEventData : public BaseEventData
+{
+public:
+	Render2ndStageEventData(const float timeStamp = 0.0f) :
+		BaseEventData(timeStamp)
+	{
+
+	}
+
+	//must be a diferent number!!
+	const unsigned int getType() const { return 7; }
 	
 //	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
 };
@@ -157,7 +172,7 @@ public:
 	}
 
 	//must be a diferent number!!
-	const unsigned int getType() const { return 7; }
+	const unsigned int getType() const { return 8; }
 	
 //	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
 };
