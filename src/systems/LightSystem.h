@@ -35,9 +35,10 @@ private:
 	float m_linCoefficient;
 	float m_expCoefficient;
 	float m_cteCoefficient;
-	float m_radius;
+	float m_radius; 
+	float m_minSpotFactor;	
 	Vec3 m_color;
-	Vec3 m_direction;
+	Vec3 m_direction; // directional light
 };
 
 class LightSystem : public System
@@ -61,10 +62,8 @@ private:
 	bool initGeometrics();
 
 	void renderPointLights();
-	void renderDirectionalLights(LightComponent* component);
-	void renderSpotLights(LightComponent* component);
-
-	void computeRadius(LightComponent* component);
+	void renderDirectionalLights();
+	void renderSpotLights();
 
 	int strToLightType(const char* str);
 

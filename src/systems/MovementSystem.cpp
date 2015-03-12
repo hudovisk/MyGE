@@ -45,6 +45,7 @@ bool MovementSystem::destroy()
 {
 	if(m_isInitialised)
 	{
+		LOG(INFO, "Destroying MovementSystem.");
 		m_componentPool.destroy();
 
 		UpdateStageEventData event;

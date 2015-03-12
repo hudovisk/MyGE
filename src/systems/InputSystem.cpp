@@ -41,11 +41,14 @@ bool InputSystem::destroy()
 {
 	if(m_isInitialised)
 	{
+		LOG(INFO, "Destroying InputSystem.");
 		UpdateStageEventData event;
 		Engine::g_eventManager.removeListenner(
 			EventListenerDelegate::from_method<InputSystem,&InputSystem::onUpdate>(this),
 			event.getType());
 		m_componentPool.destroy();
+
+		m_isInitialised = false;
 	}
 
 	return true;

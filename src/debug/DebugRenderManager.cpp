@@ -175,7 +175,6 @@ void DebugRenderManager::setFps(float fps)
 	fpsString.append(std::to_string(fps));
 	SDL_Color color = {255,255,255};
 
-	// Engine::g_renderManager.releaseTexture(m_fpsTexture);
 	Engine::g_renderManager.updateTextureFromText(m_fpsTexture,
 	 fpsString.c_str(), m_defaultFont, color);
 

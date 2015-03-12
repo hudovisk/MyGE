@@ -48,8 +48,9 @@ public:
 	 */
 	bool destroy();
 
-	void preRender1st();
-	void preRender2nd();
+	void bindGeometricPass();
+	void bindLightPass();
+	void bindShadowMapPass();
 	void renderGBuffer();
 	void render(Geometric* geometric);
 	void postRender();
@@ -137,17 +138,21 @@ public:
 	int getWidth() { return m_width; }
 	int getHeight() { return m_height; }
 
-	enum GBUFFER_TEXTURE_TYPE {
-		GBUFFER_TEXTURE_TYPE_POSITION,
+	enum {
+		GBUFFER_TEXTURE_TYPE_POSITION = 0,
 		GBUFFER_TEXTURE_TYPE_NORMAL,
 		GBUFFER_TEXTURE_TYPE_DIFFUSE,
 		GBUFFER_TEXTURE_TYPE_TEXCOORD,
-		GBUFFER_NUM_TEXTURES
+		GBUFFER_NUM_TEXTURES = 4, 
+		SHADOWMAP_TEXTURE_DEPTH = 4,
 	};
 
 private:
 	bool initSDL();
 	bool initGL();
+
+	bool initGBuffer();
+	bool initShadowMapBuffer();
 
 	void buildDefaultProjectionMatrix();
 
@@ -157,6 +162,11 @@ private:
 
 	int m_width, m_height;
 
+	//Shadow map buffer
+	unsigned int m_smFbo;
+	unsigned int m_smDepthTexture;
+
+	//Geometric buffer
 	unsigned int m_gbFbo;
 	unsigned int m_gbTextures[GBUFFER_NUM_TEXTURES];
 	unsigned int m_gbDepthTexture;

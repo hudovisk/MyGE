@@ -86,12 +86,14 @@ bool EntityManager::destroy()
 {
 	if(m_isInitialised)
 	{
+		LOG(INFO, "Destroying Systems.");
 		//RELEASE COMPONENTS
 		for(auto itEntity = m_entities.begin(); itEntity != m_entities.end(); itEntity++)
 		{
 			for(auto itComponent = itEntity->second.begin(); 
 				itComponent != itEntity->second.end(); itComponent++)
 			{
+				LOG(INFO, "RELEASING COMPONENT FROM SYSTEM: "<<itComponent->first<<" FROM ENTITY: "<<itEntity->first);
 				m_systems[itComponent->first]->release(itComponent->second);
 			}
 		}

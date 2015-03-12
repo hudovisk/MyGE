@@ -1,19 +1,11 @@
 #version 330 core
 
-struct Attenuation
+struct DirLight
 {
-	float cte;
-	float lin;
-	float expo;
-};
-
-struct PointLight
-{
-	vec3 pos;
+	vec3 direction;
 	vec3 color;
 	float ambIntensity;
 	float difIntensity;
-	Attenuation att;
 };
 
 uniform sampler2D gPositionMap;
@@ -23,7 +15,7 @@ uniform sampler2D gNormalMap;
 uniform vec2 gScreenSize;
 uniform vec3 gEyeWorldPos;
 
-uniform PointLight gLight;
+uniform DirLight gLight;
 
 out vec4 fragColor;
 
@@ -61,13 +53,9 @@ void main()
 	vec3 normal = texture(gNormalMap, texCoord).xyz;
 	normal = normalize(normal);
 
-	vec3 lightDir = position - gLight.pos;
-	float dist = length(lightDir);
-	lightDir /= dist;
+	vec3 lightDir = normalize(gLight.direction);
 
 	vec4 lightColor = calcLightColor(position, normal, color, lightDir);
 
-	float attenuation = 1 +	gLight.att.expo * dist * dist;
-
-	fragColor = vec4(color, 1.0) * lightColor/attenuation; 
+	fragColor = vec4(color, 1.0) * lightColor; 
 }

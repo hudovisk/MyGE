@@ -10,6 +10,8 @@ struct Attenuation
 struct PointLight
 {
 	vec3 pos;
+	vec3 direction;
+	float minSpotFactor;
 	vec3 color;
 	float ambIntensity;
 	float difIntensity;
@@ -65,9 +67,19 @@ void main()
 	float dist = length(lightDir);
 	lightDir /= dist;
 
-	vec4 lightColor = calcLightColor(position, normal, color, lightDir);
+	float spotFactor = dot(gLight.direction, lightDir);
+	if(spotFactor > gLight.minSpotFactor)
+	{
+		spotFactor = 1.0 - (1.0 - spotFactor) * 1/(1.0 - gLight.minSpotFactor);
+		float attenuation = 1 +	gLight.att.expo * dist * dist;
+		vec4 lightColor = calcLightColor(position, normal, color, lightDir);
 
-	float attenuation = 1 +	gLight.att.expo * dist * dist;
+		// float attenuation = 1 +	gLight.att.expo * dist * dist;
 
-	fragColor = vec4(color, 1.0) * lightColor/attenuation; 
+		fragColor = vec4(color, 1.0) * lightColor * spotFactor / attenuation; 
+	}
+	else
+	{
+		fragColor = vec4(0, 0, 0, 1);
+	}
 }

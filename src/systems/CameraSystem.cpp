@@ -44,6 +44,7 @@ bool CameraSystem::destroy()
 {
 	if(m_isInitialised)
 	{
+		LOG(INFO, "Destroying CameraSystem.");
 		m_componentPool.destroy();
 
 		WindowResizedEventData windowResizedEventData;
@@ -177,7 +178,6 @@ void CameraSystem::receiveMessage(CameraComponent* component, IMessageDataPtr me
 			case START_MOVE_FORWARD:
 			{
 				inputMessage->setHandled(true);
-				LOG(INFO, "START_MOVE_FORWARD");
 				m_movementMessage.setCurrentVelocity( m_movementMessage.getMaxVelocity() );
 				direction = m_movementMessage.getLocalDirection();
 				direction.m_data[2] = -1;
@@ -189,7 +189,7 @@ void CameraSystem::receiveMessage(CameraComponent* component, IMessageDataPtr me
 			case START_MOVE_BACKWARD:
 			{
 				inputMessage->setHandled(true);
-				LOG(INFO, "START_MOVE_BACKWARD");
+				
 				m_movementMessage.setCurrentVelocity( m_movementMessage.getMaxVelocity() );
 				direction = m_movementMessage.getLocalDirection();
 				direction.m_data[2] = 1;
@@ -201,7 +201,7 @@ void CameraSystem::receiveMessage(CameraComponent* component, IMessageDataPtr me
 			case STOP_MOVE_FORWARD_BACKWARD:
 			{
 				inputMessage->setHandled(true);
-				LOG(INFO, "STOP_MOVE_FORWARD_BACKWARD");
+				
 				m_movementMessage.setCurrentVelocity( 0 );
 				direction = m_movementMessage.getLocalDirection();
 				direction.m_data[2] = 0;
@@ -211,7 +211,7 @@ void CameraSystem::receiveMessage(CameraComponent* component, IMessageDataPtr me
 			case START_MOVE_LEFT:
 			{
 				inputMessage->setHandled(true);
-				LOG(INFO, "START_MOVE_LEFT");
+				
 				m_movementMessage.setCurrentVelocity( m_movementMessage.getMaxVelocity() );
 				direction = m_movementMessage.getLocalDirection();
 				direction.m_data[0] = -1;
@@ -223,7 +223,7 @@ void CameraSystem::receiveMessage(CameraComponent* component, IMessageDataPtr me
 			case START_MOVE_RIGHT:
 			{
 				inputMessage->setHandled(true);
-				LOG(INFO, "START_MOVE_RIGHT");
+				
 				m_movementMessage.setCurrentVelocity( m_movementMessage.getMaxVelocity() );
 				direction = m_movementMessage.getLocalDirection();
 				direction.m_data[0] = 1;
@@ -235,7 +235,7 @@ void CameraSystem::receiveMessage(CameraComponent* component, IMessageDataPtr me
 			case STOP_MOVE_LEFT_RIGHT:
 			{
 				inputMessage->setHandled(true);
-				LOG(INFO, "STOP_MOVE_LEFT_RIGHT");
+				
 				m_movementMessage.setCurrentVelocity( 0 );
 				direction = m_movementMessage.getLocalDirection();
 				direction.m_data[0] = 0;

@@ -79,6 +79,51 @@ bool RenderManager::initGL()
 
 	glViewport(0,0,m_width,m_height);
 
+	if(!initGBuffer())
+		return false;
+
+	if(!initShadowMapBuffer())
+		return false;
+
+	return true;
+}
+
+bool RenderManager::initShadowMapBuffer()
+{
+	// Create the FBO (Draws off screen, into the FBO)
+    glGenFramebuffers(1, &m_smFbo); 
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_smFbo);
+
+    // attach DepthTexture 
+    glGenTextures(1, &m_smDepthTexture);
+	glBindTexture(GL_TEXTURE_2D, m_smDepthTexture);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width, m_height, 0, 
+		GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
+		m_smDepthTexture, 0);
+
+	glDrawBuffer(GL_NONE);
+	glReadBuffer(GL_NONE);
+
+	GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
+
+    if (Status != GL_FRAMEBUFFER_COMPLETE) {
+        LOG(ERROR, "Framebuffer Object creation error, status: "<<Status);
+        return false;
+    }
+
+    //Restore default FBO.
+    glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+
+	return true;
+}
+
+bool RenderManager::initGBuffer()
+{
 	// Create the FBO (Draws off screen, into the FBO)
     glGenFramebuffers(1, &m_gbFbo); 
     glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_gbFbo);
@@ -90,6 +135,8 @@ bool RenderManager::initGL()
 		glBindTexture(GL_TEXTURE_2D, m_gbTextures[i]);
 		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
     	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+    	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, m_width, m_height, 
 			0, GL_RGB, GL_FLOAT, NULL);
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, 
@@ -100,6 +147,8 @@ bool RenderManager::initGL()
 	glBindTexture(GL_TEXTURE_2D, m_gbDepthTexture);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width, m_height, 0, 
 		GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
@@ -137,7 +186,7 @@ bool RenderManager::destroy()
 	return true;
 }
 
-void RenderManager::preRender1st()
+void RenderManager::bindGeometricPass()
 {
 	//Screen to gbuffer
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_gbFbo);
@@ -153,15 +202,33 @@ void RenderManager::preRender1st()
 	glFrontFace(GL_CW);
 	glCullFace(GL_FRONT);
 
-	glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT   | GL_ENABLE_BIT  |
-	             GL_TEXTURE_BIT      | GL_TRANSFORM_BIT | GL_VIEWPORT_BIT);
+	// glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT   | GL_ENABLE_BIT  |
+	//              GL_TEXTURE_BIT      | GL_TRANSFORM_BIT | GL_VIEWPORT_BIT);
 }
 
-void RenderManager::preRender2nd()
+void RenderManager::bindShadowMapPass()
+{
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_smFbo);
+
+	glClear(GL_DEPTH_BUFFER_BIT);
+
+	glDepthMask(GL_TRUE);
+
+	glEnable(GL_DEPTH_TEST);
+	glDisable(GL_BLEND);
+	
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
+	glCullFace(GL_FRONT);
+}
+
+void RenderManager::bindLightPass()
 {
 	glDepthMask(GL_FALSE);
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_CULL_FACE);
+	// glEnable(GL_CULL_FACE);
+	// glFrontFace(GL_CW);
 	glEnable(GL_BLEND);
    	glBlendEquation(GL_FUNC_ADD);
    	glBlendFunc(GL_ONE, GL_ONE);
@@ -178,10 +245,20 @@ void RenderManager::preRender2nd()
 		glActiveTexture(GL_TEXTURE0 + i);
 		glBindTexture(GL_TEXTURE_2D, m_gbTextures[i]);
 	}
+
+	glActiveTexture(GL_TEXTURE0 + SHADOWMAP_TEXTURE_DEPTH);
+	glBindTexture(GL_TEXTURE_2D, m_smDepthTexture);
 }
 
 void RenderManager::renderGBuffer()
 {
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	//CLEAR
+	glClear(GL_COLOR_BUFFER_BIT);
+
+	//Read from GBuffer
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbFbo);
+
 	GLsizei HalfWidth = (GLsizei)(m_width / 2.0f);
     GLsizei HalfHeight = (GLsizei)(m_height / 2.0f);
 
@@ -225,7 +302,7 @@ void RenderManager::postRender()
 	//SWAP BUFFERS
 	SDL_GL_SwapWindow(m_window);
 
-	glPopAttrib();
+	// glPopAttrib();
 }
 
 void RenderManager::bindShader(const Shader& shader)

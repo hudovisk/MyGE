@@ -55,6 +55,7 @@ bool MeshSystem::destroy()
 {
 	if(m_isInitialised)
 	{
+		LOG(INFO, "Destroying MeshSystem.");
 		Render1stStageEventData event;
 		Engine::g_eventManager.removeListenner(
 			EventListenerDelegate::from_method<MeshSystem,&MeshSystem::onUpdate>(this),
@@ -62,6 +63,7 @@ bool MeshSystem::destroy()
 
 		m_shader.destroy();
 		m_componentPool.destroy();
+		
 		m_isInitialised = false;
 	}
 	return true;
@@ -69,6 +71,8 @@ bool MeshSystem::destroy()
 
 void MeshSystem::onUpdate(IEventDataPtr e)
 {
+	Engine::g_renderManager.bindGeometricPass();
+
 	MeshComponent** meshes = m_componentPool.getUsedBufferCache();
 	unsigned int numMeshes = m_componentPool.getUsedSize();
 

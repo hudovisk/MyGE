@@ -39,7 +39,10 @@ bool SpatialSystem::destroy()
 {
 	if(m_isInitialised)
 	{
+		LOG(INFO, "Destroying SpatialSystem.");
 		m_componentPool.destroy();
+
+		m_isInitialised = false;
 	}
 
 	return true;
@@ -86,6 +89,18 @@ Component* SpatialSystem::createFromJSON(const rapidjson::Value& jsonObject)
 			scale.m_data[1] = itMember->value[1].GetDouble();
 			scale.m_data[2] = itMember->value[2].GetDouble();
 			spatial->m_transform.scale(scale);	
+		}
+		else if(strcmp("rotX", itMember->name.GetString()) == 0)
+		{
+			spatial->m_transform.rotateInDegree(itMember->value.GetDouble(), Vec3(1,0,0));
+		}
+		else if(strcmp("rotY", itMember->name.GetString()) == 0)
+		{
+			spatial->m_transform.rotateInDegree(itMember->value.GetDouble(), Vec3(0,1,0));
+		}
+		else if(strcmp("rotZ", itMember->name.GetString()) == 0)
+		{
+			spatial->m_transform.rotateInDegree(itMember->value.GetDouble(), Vec3(0,0,1));
 		}
 	}
 

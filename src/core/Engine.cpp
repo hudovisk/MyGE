@@ -27,6 +27,7 @@ bool Engine::destroy()
 {  
 	if(m_initialised)
 	{
+		LOG(INFO, "Exitting engine, destroying");
 		g_entityManager.destroy();
 		g_debugRenderManager.destroy();
 		g_renderManager.destroy();
@@ -152,6 +153,7 @@ void Engine::update(float updateTime)
 				} 
 				break;
 			case EXIT:
+				LOG(INFO, "Exitting engine, pressed ESC");
 				m_state = EngineState::EXITED;
 				break;
 		}
@@ -166,11 +168,11 @@ void Engine::render()
 	g_eventManager.triggerEvent(m_preRenderStageEvent);
 	
 	//Geometric pass
-	g_renderManager.preRender1st();
+	// g_renderManager.preRender1st();
 	g_eventManager.triggerEvent(m_render1stStageEvent);
 
 	//Light pass
-	g_renderManager.preRender2nd();
+	// g_renderManager.preRender2nd();
 	if(m_drawGBuffer)
 	{
 		g_renderManager.renderGBuffer();	

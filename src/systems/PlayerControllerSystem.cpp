@@ -40,7 +40,9 @@ bool PlayerControllerSystem::destroy()
 {
 	if(m_isInitialised)
 	{
+		LOG(INFO, "Destroying PlayerControllerSystem.");
 		m_componentPool.destroy();
+		
 		m_isInitialised = false;
 	}
 
