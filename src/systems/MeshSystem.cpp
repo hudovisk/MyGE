@@ -101,7 +101,7 @@ void MeshSystem::onUpdate(IEventDataPtr e)
 
 		m_shader.setMatrix4f("model_Matrix", transform->getMatrix());
 		m_shader.setMatrix4f("modelView_Matrix", modelView);
-		m_shader.setMatrix4f("modelViewProjection_Matrix", modelView * projection);
+		m_shader.setMatrix4f("MVP_Matrix", modelView * projection);
 
 		for(unsigned int j=0; j<mesh->m_geometrics.size(); j++)
 		{

@@ -121,28 +121,6 @@ void LightSystem::render(IEventDataPtr e)
 	renderDirectionalLights();
 
 	renderSpotLights();
-
-	// //Render directional lights.
-	// LightComponent** directionalLights = 
-	// 	m_componentPools[LightComponent::DIRECTIONAL_TYPE].getUsedBufferCache();
-	// unsigned int numDirectionalLights = 
-	// 	m_componentPools[LightComponent::DIRECTIONAL_TYPE].getUsedBufferSize();
-
-	// Engine::g_renderManager.bindShader(m_lightShaders[LightComponent::DIRECTIONAL_TYPE]);
-
-	// for(unsigned int i = 0; i < numDirectionalLights; i++)
-	// 	renderDirectionalLight(directionalLights[i]);
-
-	// //Render spot lights.
-	// LightComponent** spotLights = 
-	// 	m_componentPools[LightComponent::SPOT_TYPE].getUsedBufferCache();
-	// unsigned int numSpotLights = 
-	// 	m_componentPools[LightComponent::SPOT_TYPE].getUsedBufferSize();
-
-	// Engine::g_renderManager.bindShader(m_lightShaders[LightComponent::SPOT_TYPE]);
-
-	// for(unsigned int i = 0; i < numSpotLights; i++)
-	// 	renderSpotLight(spotLights[i]);
 }
 
 void LightSystem::renderPointLights()
@@ -156,10 +134,6 @@ void LightSystem::renderPointLights()
 	m_lightShaders[LightComponent::POINT_TYPE].set1i("gColorMap", 
 		RenderManager::GBUFFER_TEXTURE_TYPE_DIFFUSE);
 
-	// const Matrix4& invCamera = 
-	// 	Engine::g_renderManager.getDefaultCameraTransform()->getInverseMatrix();
-	// const Matrix4& projection =
-	// 	Engine::g_renderManager.getDefaultCameraProjection();
 	const Matrix4 projection;
 
 	float width = Engine::g_renderManager.getWidth();
@@ -188,12 +162,8 @@ void LightSystem::renderPointLights()
 
 		if(message.isHandled())
 		{
-			// Matrix4& model = message.getTransform()->getMatrix();
-			// model.m_data[0] = model.m_data[5] = model.m_data[10] = component->m_radius;
-
-			// const Matrix4& modelView = model * invCamera;
 			//More uniform stuff.
-			m_lightShaders[LightComponent::POINT_TYPE].setMatrix4f("modelViewProjection_Matrix",
+			m_lightShaders[LightComponent::POINT_TYPE].setMatrix4f("MVP_Matrix",
 				 /*modelView **/ projection);
 			m_lightShaders[LightComponent::POINT_TYPE].setVec3f("gLight.pos",
 				 message.getTransform()->getPosition());
@@ -230,7 +200,7 @@ void LightSystem::renderDirectionalLights()
 	//identity projection
 	Matrix4 projection;
 	projection.identity();
-	m_lightShaders[LightComponent::DIRECTIONAL_TYPE].setMatrix4f("modelViewProjection_Matrix",
+	m_lightShaders[LightComponent::DIRECTIONAL_TYPE].setMatrix4f("MVP_Matrix",
 				 projection);
 
 	float width = Engine::g_renderManager.getWidth();
@@ -277,10 +247,6 @@ void LightSystem::renderSpotLights()
 	m_lightShaders[LightComponent::SPOT_TYPE].set1i("gColorMap", 
 		RenderManager::GBUFFER_TEXTURE_TYPE_DIFFUSE);
 
-	// const Matrix4& invCamera = 
-	// 	Engine::g_renderManager.getDefaultCameraTransform()->getInverseMatrix();
-	// const Matrix4& projection =
-	// 	Engine::g_renderManager.getDefaultCameraProjection();
 	const Matrix4 projection;
 
 	float width = Engine::g_renderManager.getWidth();
@@ -311,13 +277,9 @@ void LightSystem::renderSpotLights()
 		{
 			Matrix4& model = message.getTransform()->getMatrix();
 			Vec3 direction(-model.m_data[8], -model.m_data[9], -model.m_data[10]);
-			// model.m_data[0] = model.m_data[5] = component->m_radius;
-			// model.m_data[10] = component->m_length;
-
-			// const Matrix4& modelView = model * invCamera;
 
 			//More uniform stuff.
-			m_lightShaders[LightComponent::SPOT_TYPE].setMatrix4f("modelViewProjection_Matrix",
+			m_lightShaders[LightComponent::SPOT_TYPE].setMatrix4f("MVP_Matrix",
 				 /*modelView **/ projection);
 			m_lightShaders[LightComponent::SPOT_TYPE].setVec3f("gLight.pos",
 				 message.getTransform()->getPosition());
