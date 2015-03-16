@@ -50,12 +50,16 @@ public:
 
 	void bindGeometricPass();
 	void bindLightPass();
+	void bindSkyboxPass();
 	void bindShadowMapPass();
+
 	void renderGBuffer();
 	void render(Geometric* geometric);
 	void postRender();
 
 	void bindShader(const Shader& shader);
+	void bind2DTexture(unsigned int offset, const Texture* texture);
+	void bindCubeMapTexture(unsigned int offset, unsigned int id);
 
 	void setDefaultCamera(CameraComponent* entity);
 	const Matrix4& getDefaultCameraProjection();
@@ -71,6 +75,7 @@ public:
 	 * @todo implement using SDL_Image
 	 */
 	Texture* createTextureFromImg(std::string imgPath);
+	unsigned int createCubeMapTexFromImgs(std::vector<std::string> files);
 
 	/**
 	 * @brief Initialise texture from SDL_TTF font.
@@ -103,6 +108,7 @@ public:
 	 * @param texture The texture pointer to be released.
 	 */
 	void releaseTexture(Texture* texture);
+	void releaseCubeMap(unsigned int id);
 
 	/**
 	 * @brief Initialise a Geometric object.
@@ -111,8 +117,8 @@ public:
 	 * @param filePath the Path of the file.
 	 * @return Geometric object initialised.
 	 */
-	Geometric* createGeometric(const std::vector<Vertex> vertices,
-	const std::vector<unsigned int>& indices);
+	Geometric* createGeometric(float *vertices, unsigned int numVertices,
+		unsigned int* indices, unsigned int numIndices, int flags);
 
 	/**
 	 * @brief Releases the geometric pointer.
@@ -142,8 +148,8 @@ public:
 		GBUFFER_TEXTURE_TYPE_POSITION = 0,
 		GBUFFER_TEXTURE_TYPE_NORMAL,
 		GBUFFER_TEXTURE_TYPE_DIFFUSE,
-		GBUFFER_TEXTURE_TYPE_TEXCOORD,
-		GBUFFER_NUM_TEXTURES = 4, 
+		GBUFFER_NUM_TEXTURES = 3,
+		GBUFFER_TEXTURE_TYPE_FINAL = 3,
 		SHADOWMAP_TEXTURE_DEPTH = 4,
 	};
 
@@ -170,6 +176,7 @@ private:
 	unsigned int m_gbFbo;
 	unsigned int m_gbTextures[GBUFFER_NUM_TEXTURES];
 	unsigned int m_gbDepthTexture;
+	unsigned int m_gbFinalTexture;
 
 	CameraComponent* m_defaultCamera;
 	Transform* m_defaultCameraTransform;

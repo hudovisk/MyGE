@@ -1,6 +1,6 @@
 [
 	{
-		"name" : "sponza",
+		"name" : "map",
 		
 		"SpatialSystem" : {
 			"pos" : [0.0, 0.0, 0.0],
@@ -8,7 +8,7 @@
 		},
 
 		"MeshSystem" : {
-			"file" : "res/models/crytek-sponza/sponza.obj"
+			"file" : "res/models/rungholt/rungholt.obj"
 		}
 	},
 
@@ -36,25 +36,29 @@
 			"farDistance" : 10000,
 			"aspectRatio" : 1,
 			"sensibility" : 0.01
-		}		
-	},
-
-	{
-		"name" : "spot",
-			
-		"SpatialSystem" : {
-			"pos" : [0.0, 100.0, 0.0],
-			"scale" : [1, 1, 1],
-			"rotX" : 90
 		},
 
 		"LightSystem" : {
 			"radius" : 10000,
-			"angle" : 30,
-			"color" : [1, 1, 1],
-			"ambientIntensity" : 0,
-			"diffuseIntensity" : 0.5,
+			"angle"	: 30,
+			"color" : [1,1,1],
+			"ambientIntensity" : 0.0,
+			"diffuseIntensity" : 1,
 			"type" : "spot"
+		}
+	},
+
+	{
+		"name" : "skybox",
+
+		"SkyboxSystem" : {
+			"positiveX" : "res/imgs/skybox-desertnight/rt.png",
+			"negativeX" : "res/imgs/skybox-desertnight/lf.png",
+			"positiveY" : "res/imgs/skybox-desertnight/up2.png",
+			"negativeY" : "res/imgs/skybox-desertnight/dn.png",
+			"positiveZ" : "res/imgs/skybox-desertnight/bk.png",
+			"negativeZ" : "res/imgs/skybox-desertnight/ft.png",
+			"size" : 1
 		}
 	},
 
@@ -62,11 +66,28 @@
 		"name" : "sun",
 
 		"LightSystem" : {
-			"direction" : [-1.0, -1.0, -1.0],
-			"color" : [0.27451,0.50196,0.6804],
-			"ambientIntensity" : 0.1,
-			"diffuseIntensity" : 0.5,
+			"direction" : [0.0, -1.0, 0.0],
+			"color" : [0.5,0.5,0.4],
+			"ambientIntensity" : 0.3,
+			"diffuseIntensity" : 0.7,
 			"type" : "directional"
+		}
+	},
+
+	{
+		"name" : "point",
+
+		"LightSystem" : {
+			"radius" : 1000,
+			"color" : [1,0,0],
+			"ambientIntensity" : 0.0,
+			"diffuseIntensity" : 1,
+			"type" : "point"
+		},
+
+		"SpatialSystem" : {
+			"pos" : [0.0, 100.0, 0.0],
+			"scale" : [1, 1, 1]
 		}
 	}
 ]

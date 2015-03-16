@@ -36,7 +36,7 @@ vec4 calcLightColor(vec3 position, vec3 normal, vec3 color, vec3 lightDir)
 		float specularFactor = dot(vertexToEye, lightReflect);
 		if(specularFactor > 0)
 		{
-			// specularFactor = pow(specularFactor, 3);
+			specularFactor = pow(specularFactor, 50);
 			specularColor = vec4(gLight.color, 1.0) * specularFactor;	
 		}
 	}

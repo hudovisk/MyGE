@@ -8,11 +8,10 @@
 #include "systems/PlayerControllerSystem.h"
 #include "systems/CameraSystem.h"
 #include "systems/LightSystem.h"
+#include "systems/SkyboxSystem.h"
 
 #include "debug/MyAssert.h"
 #include "core/Engine.h"
-
-
 
 #include <iostream>
 
@@ -41,6 +40,7 @@ bool EntityManager::init()
 	m_systems["PlayerControllerSystem"] = new PlayerControllerSystem();
 	m_systems["CameraSystem"] = new CameraSystem();
 	m_systems["LightSystem"] = new LightSystem();
+	m_systems["SkyboxSystem"] = new SkyboxSystem();
 
 	for(auto itSystem = m_systems.begin(); itSystem != m_systems.end(); itSystem++)
 	{

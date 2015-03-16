@@ -2,6 +2,9 @@
 #include "core/Engine.h"
 
 #include "render/RenderManager.h"
+
+#include "core/ResourceManager.h"
+
 #include "debug/Logger.h"
 #include "debug/MyAssert.h"
 
@@ -130,34 +133,39 @@ bool RenderManager::initGBuffer()
 
 	// Create the gbuffer textures (Create and attach texts to FBO)
   	glGenTextures(GBUFFER_NUM_TEXTURES, m_gbTextures);
-  	glGenTextures(1, &m_gbDepthTexture);
   	for (unsigned int i = 0 ; i < GBUFFER_NUM_TEXTURES; i++) {
 		glBindTexture(GL_TEXTURE_2D, m_gbTextures[i]);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-    	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-    	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, m_width, m_height, 
 			0, GL_RGB, GL_FLOAT, NULL);
+		glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + i, 
 			GL_TEXTURE_2D, m_gbTextures[i], 0);
 	}
 
 	// Same as before but for depth. DepthTexture is attached differently
+	glGenTextures(1, &m_gbDepthTexture);
 	glBindTexture(GL_TEXTURE_2D, m_gbDepthTexture);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width, m_height, 0, 
-		GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8, m_width, m_height, 0, 
+		GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, NULL);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
 		m_gbDepthTexture, 0);
 
+	//final texture
+	glGenTextures(1, &m_gbFinalTexture);
+	glBindTexture(GL_TEXTURE_2D, m_gbFinalTexture);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB32F, m_width, m_height, 0, 
+		GL_RGB, GL_FLOAT, NULL);
+	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_FINAL, GL_TEXTURE_2D,
+		m_gbFinalTexture, 0);
+
+
 	//Enable the attached textures to be written.
-	GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, 
-		GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3 }; 
-    glDrawBuffers(4, drawBuffers);
+	GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_POSITION,
+							 GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_NORMAL, 
+							 GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_DIFFUSE }; 
+
+    glDrawBuffers(3, drawBuffers);
 
     GLenum Status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
 
@@ -190,6 +198,16 @@ void RenderManager::bindGeometricPass()
 {
 	//Screen to gbuffer
 	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_gbFbo);
+
+	//Enable the attached textures to be written.
+	GLenum drawBuffers[] = { GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_POSITION,	
+							 GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_NORMAL,
+							 GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_DIFFUSE,
+							 GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_FINAL }; 
+
+    glDrawBuffers(4, drawBuffers);
+    glReadBuffer(GL_NONE);
+
     // Only the geometry pass updates the depth buffer
     glDepthMask(GL_TRUE);
 
@@ -201,6 +219,8 @@ void RenderManager::bindGeometricPass()
 	glEnable(GL_CULL_FACE);
 	glFrontFace(GL_CW);
 	glCullFace(GL_FRONT);
+
+
 
 	// glPushAttrib(GL_COLOR_BUFFER_BIT | GL_CURRENT_BIT   | GL_ENABLE_BIT  |
 	//              GL_TEXTURE_BIT      | GL_TRANSFORM_BIT | GL_VIEWPORT_BIT);
@@ -224,18 +244,18 @@ void RenderManager::bindShadowMapPass()
 
 void RenderManager::bindLightPass()
 {
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_gbFbo);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_FINAL);
+	// glClear(GL_COLOR_BUFFER_BIT); //CLEAR FINAL BUFFER
+
 	glDepthMask(GL_FALSE);
 	glDisable(GL_DEPTH_TEST);
+
 	glDisable(GL_CULL_FACE);
-	// glEnable(GL_CULL_FACE);
-	// glFrontFace(GL_CW);
+
 	glEnable(GL_BLEND);
    	glBlendEquation(GL_FUNC_ADD);
-   	glBlendFunc(GL_ONE, GL_ONE);
-	//Restore default FBO(Screen)
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
-	//CLEAR
-	glClear(GL_COLOR_BUFFER_BIT);
+   	glBlendFunc(GL_ONE, GL_ONE);	
 
 	//Read from GBuffer
 	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbFbo);
@@ -246,13 +266,29 @@ void RenderManager::bindLightPass()
 		glBindTexture(GL_TEXTURE_2D, m_gbTextures[i]);
 	}
 
-	glActiveTexture(GL_TEXTURE0 + SHADOWMAP_TEXTURE_DEPTH);
-	glBindTexture(GL_TEXTURE_2D, m_smDepthTexture);
+	// glActiveTexture(GL_TEXTURE0 + SHADOWMAP_TEXTURE_DEPTH);
+	// glBindTexture(GL_TEXTURE_2D, m_smDepthTexture);
+}
+
+void RenderManager::bindSkyboxPass()
+{
+	glDisable(GL_BLEND);
+	// glBindFramebuffer(GL_FRAMEBUFFER, 0);
+
+	glDepthMask(GL_TRUE);
+	glEnable(GL_DEPTH_TEST);
+
+	glDepthFunc(GL_LEQUAL);
+
+	glEnable(GL_CULL_FACE);
+	glFrontFace(GL_CW);
+	glCullFace(GL_BACK);
 }
 
 void RenderManager::renderGBuffer()
 {
-	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_gbFbo);
+	glDrawBuffer(GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_FINAL);
 	//CLEAR
 	glClear(GL_COLOR_BUFFER_BIT);
 
@@ -274,9 +310,9 @@ void RenderManager::renderGBuffer()
     glBlitFramebuffer(0, 0, m_width, m_height, 
         HalfWidth, HalfHeight, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
 
-    glReadBuffer(GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_TEXCOORD);
-    glBlitFramebuffer(0, 0, m_width, m_height, 
-        HalfWidth, 0, m_width, HalfHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);	
+    // glReadBuffer(GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_FINAL);
+    // glBlitFramebuffer(0, 0, m_width, m_height, 
+    //     HalfWidth, 0, m_width, HalfHeight, GL_COLOR_BUFFER_BIT, GL_LINEAR);	
 }
 
 void RenderManager::render(Geometric* geometric)
@@ -284,21 +320,18 @@ void RenderManager::render(Geometric* geometric)
 	if(!geometric->m_isInitialised)
 		return;
 
-	if(geometric->m_texture != nullptr)
-	{
-		if(geometric->m_texture->m_isInitialised)
-		{
-			glActiveTexture(GL_TEXTURE0);
-			glBindTexture(GL_TEXTURE_2D, geometric->m_texture->m_id);
-		}
-	}
-
 	glBindVertexArray(geometric->m_vao);
 	glDrawElements(GL_TRIANGLES, geometric->m_numIndices, GL_UNSIGNED_INT, 0);
 }
 
 void RenderManager::postRender()
 {
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, 0);
+    glBindFramebuffer(GL_READ_FRAMEBUFFER, m_gbFbo);
+    glReadBuffer(GL_COLOR_ATTACHMENT0 + GBUFFER_TEXTURE_TYPE_FINAL);
+    glBlitFramebuffer(0, 0, m_width, m_height, 
+                      0, 0, m_width, m_height, GL_COLOR_BUFFER_BIT, GL_LINEAR);
+
 	//SWAP BUFFERS
 	SDL_GL_SwapWindow(m_window);
 
@@ -308,6 +341,21 @@ void RenderManager::postRender()
 void RenderManager::bindShader(const Shader& shader)
 {
 	glUseProgram(shader.m_program);
+}
+
+void RenderManager::bind2DTexture(unsigned int offset, const Texture* texture)
+{
+	if(!texture->m_isInitialised)
+		return;
+
+	glActiveTexture(GL_TEXTURE0 + offset);
+	glBindTexture(GL_TEXTURE_2D, texture->m_id);
+}
+
+void RenderManager::bindCubeMapTexture(unsigned int offset, unsigned int id)
+{
+	glActiveTexture(GL_TEXTURE0 + offset);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, id);
 }
 
 void RenderManager::buildDefaultProjectionMatrix()
@@ -377,6 +425,44 @@ Transform* RenderManager::getDefaultCameraTransform()
 	return m_defaultCameraTransform;
 }
 
+unsigned int RenderManager::createCubeMapTexFromImgs(std::vector<std::string> files)
+{
+	if(files.size() != 6)
+	{
+		LOG(ERROR, "Cube maps must have 6 image files.");
+		return 0;
+	}
+
+	unsigned int id = 0;
+	glGenTextures(1, &id);
+	glBindTexture(GL_TEXTURE_CUBE_MAP, id);
+
+	for(int i=0; i < 6; i++)
+	{
+		SDL_Surface* surface = IMG_Load(files[i].c_str());
+
+		int mode = GL_RGB; 
+		if(surface->format->BytesPerPixel == 4) {
+		    mode = GL_RGBA;
+		}
+
+		glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X + i, 0, mode, surface->w, surface->h, 0,
+    		mode, GL_UNSIGNED_BYTE, surface->pixels);
+
+		SDL_FreeSurface(surface);
+	}
+
+	glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+    glTexParameteri(GL_TEXTURE_CUBE_MAP, GL_TEXTURE_WRAP_R, GL_CLAMP_TO_EDGE);
+
+    glBindTexture(GL_TEXTURE_CUBE_MAP, 0);
+
+    return id;
+}
+
 Texture* RenderManager::createTextureFromImg(std::string imgPath)
 {
 	Texture* texture = m_texturesPool.create();
@@ -390,12 +476,13 @@ Texture* RenderManager::createTextureFromImg(std::string imgPath)
 
 	glGenTextures(1, &texture->m_id);
 	glBindTexture(GL_TEXTURE_2D, texture->m_id);
-	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexImage2D(GL_TEXTURE_2D, 0, mode, surface->w, surface->h, 0,
+    	mode, GL_UNSIGNED_BYTE, surface->pixels);
+    glGenerateMipmap(GL_TEXTURE_2D); // allocate mipmaps
+    glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
     glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
     //glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
-    glTexImage2D(GL_TEXTURE_2D, 0, mode, surface->w, surface->h, 0,
-    	mode, GL_UNSIGNED_BYTE, surface->pixels);
     glBindTexture(GL_TEXTURE_2D,0);
 
     texture->m_width = surface->w;
@@ -468,10 +555,20 @@ void RenderManager::releaseTexture(Texture* texture)
 	m_texturesPool.release(texture);
 }
 
-Geometric* RenderManager::createGeometric(const std::vector<Vertex> vertices,
-	const std::vector<unsigned int>& indices)
+void RenderManager::releaseCubeMap(unsigned int id)
+{
+	glDeleteTextures(1, &id);
+}
+
+Geometric* RenderManager::createGeometric(float *verticesData, unsigned int numVertices,
+		unsigned int* indices, unsigned int numIndices, int flags)
 {
 	Geometric* geometric = m_geometricPool.create();
+
+	unsigned int dataSize = 3;
+	if(flags & ResourceManager::LOAD_NORMALS) dataSize += 3;
+	if(flags & ResourceManager::LOAD_TEXTURES) dataSize += 2;
+	if(flags & ResourceManager::LOAD_TANGENTS) dataSize += 3;
 
 	glGenVertexArrays(1, &geometric->m_vao);
 	glBindVertexArray(geometric->m_vao);
@@ -479,50 +576,74 @@ Geometric* RenderManager::createGeometric(const std::vector<Vertex> vertices,
 	//initialise vertex buffer
 	glGenBuffers(1,&geometric->m_vbo);
 	glBindBuffer(GL_ARRAY_BUFFER, geometric->m_vbo);
-	glBufferData(GL_ARRAY_BUFFER, 
-							vertices.size() * sizeof(Vertex),
-							&vertices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, numVertices * dataSize * sizeof(float), verticesData, GL_STATIC_DRAW);
 
-	glEnableVertexAttribArray(0); //position
-	glEnableVertexAttribArray(1); //normals
-	glEnableVertexAttribArray(2); //texture uv
+	unsigned int attrCounter = 0;
+	unsigned int offset = 0;
 
+	glEnableVertexAttribArray(attrCounter); //position
 	glVertexAttribPointer(
-			0,                  	// attribute 0.
+			attrCounter,            	// attribute 0.
+			3,							// size
+			GL_FLOAT,           		// type
+			GL_FALSE,           		// normalized?
+			dataSize * sizeof(float),   // stride
+			(void*)offset          		// array buffer offset
+	);
+	attrCounter++;
+	offset += 3 * sizeof(float); 
+
+	if(flags & ResourceManager::LOAD_NORMALS)
+	{
+		glEnableVertexAttribArray(attrCounter); //normals
+		glVertexAttribPointer(
+			attrCounter,                // attribute 1.
+			3,							// size
+			GL_FLOAT,           		// type
+			GL_FALSE,           		// normalized?
+			dataSize * sizeof(float),   // stride
+			(void*)offset          		// array buffer offset
+		);
+		attrCounter++;
+		offset += 3 * sizeof(float);
+	}
+	if(flags & ResourceManager::LOAD_TEXTURES)
+	{
+		glEnableVertexAttribArray(attrCounter); //texture uv
+		glVertexAttribPointer(
+			attrCounter,                  	// attribute 2.
+			2,								// size
+			GL_FLOAT,           			// type
+			GL_FALSE,           			// normalized?
+			dataSize * sizeof(float),    	// stride
+			(void*)offset          			// array buffer offset
+		);
+		attrCounter++;
+		offset += 2 * sizeof(float);
+	}
+	if(flags & ResourceManager::LOAD_TANGENTS)
+	{
+		glEnableVertexAttribArray(attrCounter); //tangents
+		glVertexAttribPointer(
+			attrCounter,                  	// attribute 2.
 			3,										// size
 			GL_FLOAT,           	// type
 			GL_FALSE,           	// normalized?
-			sizeof(Vertex),    		// stride
-			(void*)0            	// array buffer offset
-	);
-	glVertexAttribPointer(
-			1,                  	// attribute 1.
-			3,										// size
-			GL_FLOAT,           	// type
-			GL_FALSE,           	// normalized?
-			sizeof(Vertex),    		// stride
-			(void*)12            	// array buffer offset
-	);
-	glVertexAttribPointer(
-			2,                  	// attribute 2.
-			2,										// size
-			GL_FLOAT,           	// type
-			GL_FALSE,           	// normalized?
-			sizeof(Vertex),    		// stride
-			(void*)24            	// array buffer offset
-	);
+			dataSize * sizeof(float),    		// stride
+			(void*)offset            	// array buffer offset
+		);
+		attrCounter++;
+		offset += 2 * sizeof(float);
+	}	
 
 	glGenBuffers(1, &geometric->m_vboIndices);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, geometric->m_vboIndices);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, 
-							indices.size() * sizeof(unsigned int),
-							&indices[0], GL_STATIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, numIndices * sizeof(unsigned int), indices, GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
 
-	geometric->m_numIndices = indices.size();
+	geometric->m_numIndices = numIndices;
 	geometric->m_isInitialised = true;
-	geometric->m_texture = nullptr;
 
 	return geometric;
 }

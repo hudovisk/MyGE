@@ -109,6 +109,9 @@ Component* CameraSystem::createFromJSON(const rapidjson::Value& jsonObject)
 		}
 	}
 
+	float width = Engine::g_renderManager.getWidth();
+	float height = Engine::g_renderManager.getHeight();
+	component->m_aspectRatio = width/height;
 	
 	return component;
 }

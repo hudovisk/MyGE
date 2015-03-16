@@ -131,7 +131,7 @@ void DebugRenderManager::initQuad()
 			(void*)12            	// array buffer offset
 	);
 
-	unsigned int indices[6] = {0, 1, 2, 2, 3, 0};
+	unsigned int indices[6] = {2, 1, 0, 0, 3, 2};
 
 	glGenBuffers(1, &m_vboIndicesQuad);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, m_vboIndicesQuad);

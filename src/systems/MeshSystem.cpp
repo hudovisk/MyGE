@@ -4,14 +4,10 @@
 #include "core/Engine.h"
 #include "debug/Logger.h"
 
-#include "assimp-3.1.1/Importer.hpp"
-#include "assimp-3.1.1/postprocess.h"
-#include "assimp-3.1.1/scene.h"
-
 #include <iostream>
 
-void getVerticesAndIndices(std::vector<Vertex>& vertices, 
-	std::vector<unsigned int>& indices, const aiMesh* aMesh);
+// void getVerticesAndIndices(std::vector<Vertex>& vertices, 
+// 	std::vector<unsigned int>& indices, const aiMesh* aMesh);
 
 MeshSystem::MeshSystem()
 	: m_isInitialised(false)
@@ -43,7 +39,7 @@ bool MeshSystem::init()
 
 	Render1stStageEventData event;
 	Engine::g_eventManager.addListenner(
-		EventListenerDelegate::from_method<MeshSystem,&MeshSystem::onUpdate>(this),
+		EventListenerDelegate::from_method<MeshSystem,&MeshSystem::render>(this),
 		event.getType());
 
 	m_isInitialised = true;
@@ -58,7 +54,7 @@ bool MeshSystem::destroy()
 		LOG(INFO, "Destroying MeshSystem.");
 		Render1stStageEventData event;
 		Engine::g_eventManager.removeListenner(
-			EventListenerDelegate::from_method<MeshSystem,&MeshSystem::onUpdate>(this),
+			EventListenerDelegate::from_method<MeshSystem,&MeshSystem::render>(this),
 			event.getType());
 
 		m_shader.destroy();
@@ -69,7 +65,7 @@ bool MeshSystem::destroy()
 	return true;
 }
 
-void MeshSystem::onUpdate(IEventDataPtr e)
+void MeshSystem::render(IEventDataPtr e)
 {
 	Engine::g_renderManager.bindGeometricPass();
 
@@ -105,6 +101,34 @@ void MeshSystem::onUpdate(IEventDataPtr e)
 
 		for(unsigned int j=0; j<mesh->m_geometrics.size(); j++)
 		{
+			const Geometric* geometric = mesh->m_geometrics[j];
+
+			int texCount = 0;
+			if(geometric->m_material.m_diffuseTexture != nullptr)
+			{
+				Engine::g_renderManager.bind2DTexture(texCount, geometric->m_material.m_diffuseTexture);
+				m_shader.set1i("gDiffuseSampler", texCount++);
+				m_shader.set1i("useDiffSampler", 1);
+			}
+			else
+			{
+				m_shader.setVec3f("gDiffColor", geometric->m_material.m_diffColor);
+				m_shader.set1i("useDiffSampler", 0);
+			}
+
+			// m_shader.set1f("gMaterial.shininess", geometric->m_material.m_shineness);
+
+			if(geometric->m_material.m_normalsTexture != nullptr)
+			{
+				Engine::g_renderManager.bind2DTexture(texCount, geometric->m_material.m_normalsTexture);
+				m_shader.set1i("gNormalsSampler", texCount++);
+				m_shader.set1i("useNormalSampler", 1);
+			}
+			else
+			{
+				m_shader.set1i("useNormalSampler", 0);	
+			}
+
 			Engine::g_renderManager.render(mesh->m_geometrics[j]);
 		}
 	}
@@ -125,94 +149,98 @@ Component* MeshSystem::createFromJSON(const rapidjson::Value& jsonObject)
 	{
 		if(strcmp("file", itMember->name.GetString()) == 0)
 		{
-			loadFile(component, itMember->value.GetString());
+			Engine::g_resourceManager.loadOBJFile(itMember->value.GetString(), component->m_geometrics, ResourceManager::LOAD_EVERYTHING);
 		}
 	}
 
 	return component;
 }
 
-void MeshSystem::loadFile(MeshComponent* mesh, std::string filePath)
-{
-	Assimp::Importer importer;
-	const aiScene *scene = importer.ReadFile(filePath, 
-		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
+// void MeshSystem::loadFile(MeshComponent* mesh, std::string filePath)
+// {
+// 	Assimp::Importer importer;
+// 	const aiScene *scene = importer.ReadFile(filePath, 
+// 		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
 	
-	//GET DIRECTORY TO LOAD TEXTURES CORRECTLY
-	std::string::size_type slashIndex = filePath.find_last_of("/");
-	std::string dir;
-	if (slashIndex == std::string::npos) {
-      dir = ".";
-	}
-	else if (slashIndex == 0) {
-		dir = "/";
-	}
-	else {
-		dir = filePath.substr(0, slashIndex);
-	}
+// 	//GET DIRECTORY TO LOAD TEXTURES CORRECTLY
+// 	std::string::size_type slashIndex = filePath.find_last_of("/");
+// 	std::string dir;
+// 	if (slashIndex == std::string::npos) {
+//       dir = ".";
+// 	}
+// 	else if (slashIndex == 0) {
+// 		dir = "/";
+// 	}
+// 	else {
+// 		dir = filePath.substr(0, slashIndex);
+// 	}
 
-	if(!scene)
-	{
-		LOG(ERROR, "Error importing: "<<filePath<<". "<<importer.GetErrorString());
-		return;
-	}
+// 	if(!scene)
+// 	{
+// 		LOG(ERROR, "Error importing: "<<filePath<<". "<<importer.GetErrorString());
+// 		return;
+// 	}
 
-	//LOAD TEXTURES
-	std::vector<Texture*> textures(scene->mNumMaterials);
-	for(unsigned int i=0; i < scene->mNumMaterials; i++)
-	{
-		const aiMaterial* aMaterial = scene->mMaterials[i];
-		if(aMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
-		{
-			aiString texturePath;
-			if(aMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath,
-				NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
-			{
-				//CONVERT SLASHES FOR LINUX
-				int aux = 0;
-	  			while(texturePath.data[aux] != '\0')
-	  			{
-	  				if(texturePath.data[aux] == '\\')
-	  					texturePath.data[aux] = '/';
-	  				aux++;
-	  			}
-	  			std::string fullPath = dir + "/" + texturePath.data;
-	  			// std::cout<<"Pos: "<<pos++<<" Texture: "<<fullPath<<std::endl;
-  				textures[i] = Engine::g_renderManager.createTextureFromImg(fullPath);
-			}
-		}
-	}
+// 	//LOAD TEXTURES
+// 	std::vector<Texture*> textures(scene->mNumMaterials);
+// 	for(unsigned int i=0; i < scene->mNumMaterials; i++)
+// 	{
+// 		const aiMaterial* aMaterial = scene->mMaterials[i];
+// 		if(aMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
+// 		{
+// 			aiString texturePath;
+// 			if(aMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath,
+// 				NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
+// 			{
+// 				//CONVERT SLASHES FOR LINUX
+// 				int aux = 0;
+// 	  			while(texturePath.data[aux] != '\0')
+// 	  			{
+// 	  				if(texturePath.data[aux] == '\\')
+// 	  					texturePath.data[aux] = '/';
+// 	  				aux++;
+// 	  			}
+// 	  			std::string fullPath = dir + "/" + texturePath.data;
+// 	  			// std::cout<<"Pos: "<<pos++<<" Texture: "<<fullPath<<std::endl;
+//   				textures[i] = Engine::g_renderManager.createTextureFromImg(fullPath);
+// 			}
+// 		}
+// 	}
 
-	//LOAD VERTICES
-	for(unsigned int i=0; i < scene->mNumMeshes; i++)
-	{
-		const aiMesh* aMesh = scene->mMeshes[i];
+// 	//LOAD VERTICES
+// 	for(unsigned int i=0; i < scene->mNumMeshes; i++)
+// 	{
+// 		const aiMesh* aMesh = scene->mMeshes[i];
 		
-		std::vector<Vertex> vertices(aMesh->mNumVertices);
-		std::vector<unsigned int> indices(aMesh->mNumFaces * 3);
+// 		std::vector<Vertex> vertices(aMesh->mNumVertices);
+// 		std::vector<unsigned int> indices(aMesh->mNumFaces * 3);
 
-		getVerticesAndIndices(vertices, indices, aMesh);
+// 		getVerticesAndIndices(vertices, indices, aMesh);
 
-		Geometric* geometric = Engine::g_renderManager.createGeometric(vertices, indices);
-		if(aMesh->HasTextureCoords(0))
-		{
-			// std::cout<<"Index: "<<aMesh->mMaterialIndex;
-			// std::cout<<" Address: "<<textures[aMesh->mMaterialIndex]<<std::endl;
-			geometric->m_texture = textures[aMesh->mMaterialIndex];
-		}
+// 		Geometric* geometric = Engine::g_renderManager.createGeometric(vertices, indices);
+// 		if(aMesh->HasTextureCoords(0))
+// 		{
+// 			// std::cout<<"Index: "<<aMesh->mMaterialIndex;
+// 			// std::cout<<" Address: "<<textures[aMesh->mMaterialIndex]<<std::endl;
+// 			geometric->m_texture = textures[aMesh->mMaterialIndex];
+// 		}
 
-		mesh->m_geometrics.push_back(geometric);
-	}
-}
+// 		mesh->m_geometrics.push_back(geometric);
+// 	}
+// }
 
 void MeshSystem::release(Component* component)
 {
 	MeshComponent* mesh = dynamic_cast<MeshComponent*>(component);
 	for(unsigned int i=0; i<mesh->m_geometrics.size(); i++)
 	{
-		if(mesh->m_geometrics[i]->m_texture)
+		if(mesh->m_geometrics[i]->m_material.m_diffuseTexture)
 		{
-			Engine::g_renderManager.releaseTexture(mesh->m_geometrics[i]->m_texture);	
+			Engine::g_renderManager.releaseTexture(mesh->m_geometrics[i]->m_material.m_diffuseTexture);	
+		}
+		if(mesh->m_geometrics[i]->m_material.m_normalsTexture)
+		{
+			Engine::g_renderManager.releaseTexture(mesh->m_geometrics[i]->m_material.m_normalsTexture);	
 		}
 
 		Engine::g_renderManager.releaseGeometric(mesh->m_geometrics[i]);
@@ -221,31 +249,3 @@ void MeshSystem::release(Component* component)
 	m_componentPool.release(mesh);
 }
 
-void getVerticesAndIndices(std::vector<Vertex>& vertices, 
-	std::vector<unsigned int>& indices, const aiMesh* aMesh)
-{
-	const aiVector3D zero3D(0.0f, 0.0f, 0.0f);
-	
-	for(unsigned int i=0; i < aMesh->mNumVertices; i++)
-	{
-		const aiVector3D* aPos      = &(aMesh->mVertices[i]);
-		const aiVector3D* aNormal   = &(aMesh->mNormals[i]);
-		const aiVector3D* aTexCoord = aMesh->HasTextureCoords(0) ?
-			&(aMesh->mTextureCoords[0][i]) : &zero3D;
-
-		Vertex v(Vec3(aPos->x, aPos->y, aPos->z),
-					Vec3(aNormal->x, aNormal->y, aNormal->z),
-					Vec3(aTexCoord->x, aTexCoord->y, 0));
-
-		vertices[i] = v;
-	}
-
-	for(unsigned int t = 0; t < aMesh->mNumFaces; t++) 
-	{
-		const aiFace *face = &aMesh->mFaces[t];
-
-		indices[t*3] 			= face->mIndices[0];
-		indices[t*3 + 1] 	= face->mIndices[1];
-		indices[t*3 + 2] 	= face->mIndices[2];
-	}
-}

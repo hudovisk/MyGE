@@ -84,8 +84,12 @@ bool LightSystem::initShaders()
 
 bool LightSystem::initGeometrics()
 {
-	m_lightGeometrics[LightComponent::POINT_TYPE] = loadFile("res/models/sphere.obj");
-	m_lightGeometrics[LightComponent::DIRECTIONAL_TYPE] = loadFile("res/models/quad.obj");
+	std::vector<Geometric*> geometrics;
+	Engine::g_resourceManager.loadOBJFile("res/models/sphere.obj", geometrics, ResourceManager::LOAD_POSITIONS);
+	Engine::g_resourceManager.loadOBJFile("res/models/quad.obj", geometrics, ResourceManager::LOAD_POSITIONS);
+
+	m_lightGeometrics[LightComponent::POINT_TYPE] = geometrics[0];
+	m_lightGeometrics[LightComponent::DIRECTIONAL_TYPE] = geometrics[1];
 	// m_lightGeometrics[LightComponent::SPOT_TYPE] = loadFile("res/models/spot.obj");
 	return true;
 }
@@ -391,53 +395,3 @@ int LightSystem::strToLightType(const char* str)
 		return LightComponent::POINT_TYPE;
 	}
 }
-/**
- * TODO: DUPLICATE CODE, FIX IT! (Possible solution: LoaderClass?)
- */
-Geometric* loadFile(std::string filePath)
-{
-	Assimp::Importer importer;
-	const aiScene *scene = importer.ReadFile(filePath, 
-		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
-
-	//LOAD VERTICES
-	const aiMesh* aMesh = scene->mMeshes[0];
-		
-	std::vector<Vertex> vertices(aMesh->mNumVertices);
-	std::vector<unsigned int> indices(aMesh->mNumFaces * 3);
-
-	getVerticesAndIndices(vertices, indices, aMesh);
-
-	Geometric* geometric = Engine::g_renderManager.createGeometric(vertices, indices);
-
-	return geometric;
-}
-
-// void getVerticesAndIndices(std::vector<Vertex>& vertices, 
-// 	std::vector<unsigned int>& indices, const aiMesh* aMesh)
-// {
-// 	const aiVector3D zero3D(0.0f, 0.0f, 0.0f);
-	
-// 	for(unsigned int i=0; i < aMesh->mNumVertices; i++)
-// 	{
-// 		const aiVector3D* aPos      = &(aMesh->mVertices[i]);
-// 		const aiVector3D* aNormal   = &(aMesh->mNormals[i]);
-// 		const aiVector3D* aTexCoord = aMesh->HasTextureCoords(0) ?
-// 			&(aMesh->mTextureCoords[0][i]) : &zero3D;
-
-// 		Vertex v(Vec3(aPos->x, aPos->y, aPos->z),
-// 					Vec3(aNormal->x, aNormal->y, aNormal->z),
-// 					Vec3(aTexCoord->x, aTexCoord->y, 0));
-
-// 		vertices[i] = v;
-// 	}
-
-// 	for(unsigned int t = 0; t < aMesh->mNumFaces; t++) 
-// 	{
-// 		const aiFace *face = &aMesh->mFaces[t];
-
-// 		indices[t*3] 			= face->mIndices[0];
-// 		indices[t*3 + 1] 	= face->mIndices[1];
-// 		indices[t*3 + 2] 	= face->mIndices[2];
-// 	}
-// }

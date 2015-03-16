@@ -10,6 +10,7 @@ EventManager Engine::g_eventManager;
 RenderManager Engine::g_renderManager;
 DebugRenderManager Engine::g_debugRenderManager;
 EntityManager Engine::g_entityManager;
+ResourceManager Engine::g_resourceManager;
 
 Engine::Engine()
 	: m_state(EngineState::NOT_STARTED), m_initialised(false),
@@ -29,6 +30,7 @@ bool Engine::destroy()
 	{
 		LOG(INFO, "Exitting engine, destroying");
 		g_entityManager.destroy();
+		g_resourceManager.destroy();
 		g_debugRenderManager.destroy();
 		g_renderManager.destroy();
 		g_eventManager.destroy();
@@ -59,6 +61,9 @@ bool Engine::init()
 		return false;
 
 	if(!g_debugRenderManager.init())
+		return false;
+
+	if(!g_resourceManager.init())
 		return false;
 
 	if(!g_entityManager.init())

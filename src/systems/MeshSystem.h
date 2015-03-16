@@ -33,14 +33,14 @@ public:
 	bool init();
 	bool destroy();
 
-	void onUpdate(IEventDataPtr e);
+	void render(IEventDataPtr e);
 
 	Component* create();
 	Component* createFromJSON(const rapidjson::Value& jsonObject);
 
 	void release(Component* mesh);
 private:
-	void loadFile(MeshComponent* mesh, std::string filePath);
+	// void loadFile(MeshComponent* mesh, std::string filePath);
 
 	bool m_isInitialised;
 

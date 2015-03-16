@@ -1,13 +1,15 @@
 set(core_source_files 
 	Engine.cpp 
 	Platform.cpp 
-	EntityManager.cpp )
+	EntityManager.cpp 
+	ResourceManager.cpp)
 
 set(core_header_files 
 	Engine.h 
 	Platform.h 
 	EntityManager.h 
-	Messages.h )
+	Messages.h 
+	ResourceManager.h )
 
 add_library(core ${core_source_files} ${core_header_files})
 

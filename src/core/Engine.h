@@ -5,6 +5,7 @@
 #include "render/RenderManager.h"
 #include "debug/DebugRenderManager.h"
 #include "core/EntityManager.h"
+#include "core/ResourceManager.h"
 
 #include "events/InputContext.h"
 /**
@@ -78,6 +79,7 @@ public:
 	static RenderManager g_renderManager;
 	static DebugRenderManager g_debugRenderManager;
 	static EntityManager g_entityManager;
+	static ResourceManager g_resourceManager;
 
 private:
 	void update(float updateTime);

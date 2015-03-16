@@ -1,4 +1,7 @@
 
+#ifndef LIGHT_SYSTEM_H
+#define LIGHT_SYSTEM_H
+
 #include "systems/System.h"
 
 #include "events/Events.h"
@@ -75,3 +78,5 @@ private:
 
 	ObjectPool<LightComponent> m_componentPools[3];
 };
+
+#endif //LIGHT_SYSTEM_H

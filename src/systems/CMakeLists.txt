@@ -5,7 +5,9 @@ set(my_systems_source_files
  	MovementSystem.cpp 
  	PlayerControllerSystem.cpp
  	CameraSystem.cpp
- 	LightSystem.cpp )
+ 	LightSystem.cpp
+ 	SkyboxSystem.cpp
+  )
 
 set(my_systems_header_files
  	MeshSystem.h 
@@ -15,7 +17,9 @@ set(my_systems_header_files
  	MovementSystem.h 
  	PlayerControllerSystem.h
  	CameraSystem.h 
- 	LightSystem.h )
+ 	LightSystem.h 
+ 	SkyboxSystem.h
+  )
 
 add_library(my_systems ${my_systems_source_files} ${my_systems_header_files})
 
