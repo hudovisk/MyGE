@@ -80,8 +80,8 @@ bool Engine::init()
 
 	m_updateStageEvent = std::make_shared<UpdateStageEventData>(0);
 	m_preRenderStageEvent = std::make_shared<PreRenderStageEventData>(0);
-	m_render1stStageEvent = std::make_shared<Render1stStageEventData>(0);
-	m_render2ndStageEvent = std::make_shared<Render2ndStageEventData>(0);
+	m_geometricPassEvent = std::make_shared<GeometricPassEventData>(0);
+	m_lightPassEvent = std::make_shared<LightPassEventData>(0);
 	m_postRenderStageEvent = std::make_shared<PostRenderStageEventData>(0);
 
 	m_initialised = true;
@@ -173,19 +173,13 @@ void Engine::render()
 	g_eventManager.triggerEvent(m_preRenderStageEvent);
 	
 	//Geometric pass
-	// g_renderManager.preRender1st();
-	g_eventManager.triggerEvent(m_render1stStageEvent);
+	g_eventManager.triggerEvent(m_geometricPassEvent);
 
 	//Light pass
-	// g_renderManager.preRender2nd();
+	g_eventManager.triggerEvent(m_lightPassEvent);
+
 	if(m_drawGBuffer)
-	{
 		g_renderManager.renderGBuffer();	
-	}
-	else
-	{
-		g_eventManager.triggerEvent(m_render2ndStageEvent);
-	}
 
 	g_debugRenderManager.render();
 

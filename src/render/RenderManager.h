@@ -51,7 +51,7 @@ public:
 	void bindGeometricPass();
 	void bindLightPass();
 	void bindSkyboxPass();
-	void bindShadowMapPass();
+	void bindShadowPass();
 
 	void renderGBuffer();
 	void render(Geometric* geometric);

@@ -29,7 +29,7 @@ bool SkyboxSystem::init()
 		return false;
 	}
 
-	Render2ndStageEventData event;
+	LightPassEventData event;
 	Engine::g_eventManager.addListenner(
 		EventListenerDelegate::from_method<SkyboxSystem,&SkyboxSystem::render>(this),
 		event.getType());
@@ -48,7 +48,7 @@ bool SkyboxSystem::destroy()
 	if(m_initialised)
 	{
 		LOG(INFO, "Destroying SkyboxSystem.");
-		Render2ndStageEventData event;
+		LightPassEventData event;
 		Engine::g_eventManager.removeListenner(
 			EventListenerDelegate::from_method<SkyboxSystem,&SkyboxSystem::render>(this),
 			event.getType());

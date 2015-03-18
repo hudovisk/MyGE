@@ -48,7 +48,9 @@ bool LightSystem::init()
 	if(!initGeometrics())
 		return false;
 
-	Render2ndStageEventData event;
+	m_shadowStencilEvent = std::make_shared<ShadowStencilPassEventData>(0);
+
+	LightPassEventData event;
 	Engine::g_eventManager.addListenner(
 		EventListenerDelegate::from_method<LightSystem,&LightSystem::render>(this),
 		event.getType());
@@ -99,7 +101,7 @@ bool LightSystem::destroy()
 	if(m_isInitialised)
 	{
 		LOG(INFO, "Destroying LightSystem.");
-		Render2ndStageEventData event;
+		LightPassEventData event;
 		Engine::g_eventManager.removeListenner(
 			EventListenerDelegate::from_method<LightSystem,&LightSystem::render>(this),
 			event.getType());
@@ -120,7 +122,7 @@ void LightSystem::render(IEventDataPtr e)
 {
 	Engine::g_renderManager.bindLightPass();
 
-	renderPointLights();
+	// renderPointLights();
 
 	renderDirectionalLights();
 
@@ -242,7 +244,6 @@ void LightSystem::renderDirectionalLights()
 
 void LightSystem::renderSpotLights()
 {
-	Engine::g_renderManager.bindShader(m_lightShaders[LightComponent::SPOT_TYPE]);
 	//Set uniform stuff.
 	m_lightShaders[LightComponent::SPOT_TYPE].set1i("gPositionMap",
 		RenderManager::GBUFFER_TEXTURE_TYPE_POSITION);
@@ -251,7 +252,7 @@ void LightSystem::renderSpotLights()
 	m_lightShaders[LightComponent::SPOT_TYPE].set1i("gColorMap", 
 		RenderManager::GBUFFER_TEXTURE_TYPE_DIFFUSE);
 
-	const Matrix4 projection;
+	const Matrix4 projection = Engine::g_renderManager.getDefaultCameraProjection();
 
 	float width = Engine::g_renderManager.getWidth();
 	float height = Engine::g_renderManager.getHeight();
@@ -280,11 +281,35 @@ void LightSystem::renderSpotLights()
 		if(message.isHandled())
 		{
 			Matrix4& model = message.getTransform()->getMatrix();
+			Matrix4& invModel = message.getTransform()->getInverseMatrix();
+
 			Vec3 direction(-model.m_data[8], -model.m_data[9], -model.m_data[10]);
 
+			//shadow pass
+			m_shadowStencilEvent->m_stencil = false;
+			m_shadowStencilEvent->m_view = &invModel;
+			m_shadowStencilEvent->m_projection = &projection;
+			Engine::g_eventManager.triggerEvent(m_shadowStencilEvent);
+
+			Engine::g_renderManager.bindLightPass();
+			Engine::g_renderManager.bindShader(m_lightShaders[LightComponent::SPOT_TYPE]);
+
+			m_lightShaders[LightComponent::SPOT_TYPE].set1i("gShadowMap",
+				RenderManager::SHADOWMAP_TEXTURE_DEPTH);
+			m_lightShaders[LightComponent::SPOT_TYPE].set2f("gScreenSize",
+				 width, height);
+			m_lightShaders[LightComponent::SPOT_TYPE].set1i("gPositionMap",
+				RenderManager::GBUFFER_TEXTURE_TYPE_POSITION);
+			m_lightShaders[LightComponent::SPOT_TYPE].set1i("gNormalMap",
+				RenderManager::GBUFFER_TEXTURE_TYPE_NORMAL);
+			m_lightShaders[LightComponent::SPOT_TYPE].set1i("gColorMap", 
+				RenderManager::GBUFFER_TEXTURE_TYPE_DIFFUSE);
+			m_lightShaders[LightComponent::SPOT_TYPE].setVec3f("gEyeWorldPos",
+				 cameraPos);
+
 			//More uniform stuff.
-			m_lightShaders[LightComponent::SPOT_TYPE].setMatrix4f("MVP_Matrix",
-				 /*modelView **/ projection);
+			m_lightShaders[LightComponent::SPOT_TYPE].setMatrix4f("MVPLight_Matrix",
+				 invModel * projection);
 			m_lightShaders[LightComponent::SPOT_TYPE].setVec3f("gLight.pos",
 				 message.getTransform()->getPosition());
 			m_lightShaders[LightComponent::SPOT_TYPE].setVec3f("gLight.direction",
@@ -300,7 +325,7 @@ void LightSystem::renderSpotLights()
 			m_lightShaders[LightComponent::SPOT_TYPE].set1f("gLight.att.expo",
 				component->m_expCoefficient);
 
-			//Finally render it.
+			//Finally render it
 			Engine::g_renderManager.render(m_lightGeometrics[LightComponent::DIRECTIONAL_TYPE]);
 		}
 		else

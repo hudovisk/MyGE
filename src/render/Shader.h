@@ -30,6 +30,8 @@ public:
 	bool isInitialised() { return m_initialised; }
 
 private:
+	bool compileShader(std::string shaderPath, unsigned int shaderId);
+
 	friend class RenderManager;
 
 	std::string m_vertexFilePath;

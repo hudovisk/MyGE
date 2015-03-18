@@ -37,10 +37,21 @@ bool MeshSystem::init()
 		return false;
 	}
 
-	Render1stStageEventData event;
+	if(!m_shadowStencilShader.init("res/shaders/shadowStencilVertex.glsl", ""))
+	{
+		LOG(ERROR, "Default MeshSystem shadowStencil shader could not initialise.");
+		return false;
+	}
+
+	GeometricPassEventData geometricEvent;
+	ShadowStencilPassEventData shadowEvent;
+
 	Engine::g_eventManager.addListenner(
-		EventListenerDelegate::from_method<MeshSystem,&MeshSystem::render>(this),
-		event.getType());
+		EventListenerDelegate::from_method<MeshSystem,&MeshSystem::geometricPass>(this),
+		geometricEvent.getType());
+	Engine::g_eventManager.addListenner(
+		EventListenerDelegate::from_method<MeshSystem,&MeshSystem::shadowStencilPass>(this),
+		shadowEvent.getType());
 
 	m_isInitialised = true;
 
@@ -52,12 +63,19 @@ bool MeshSystem::destroy()
 	if(m_isInitialised)
 	{
 		LOG(INFO, "Destroying MeshSystem.");
-		Render1stStageEventData event;
+		GeometricPassEventData geometricEvent;
+		ShadowStencilPassEventData shadowEvent;
+
 		Engine::g_eventManager.removeListenner(
-			EventListenerDelegate::from_method<MeshSystem,&MeshSystem::render>(this),
-			event.getType());
+			EventListenerDelegate::from_method<MeshSystem,&MeshSystem::geometricPass>(this),
+			geometricEvent.getType());
+		Engine::g_eventManager.removeListenner(
+			EventListenerDelegate::from_method<MeshSystem,&MeshSystem::shadowStencilPass>(this),
+			shadowEvent.getType());
 
 		m_shader.destroy();
+		m_shadowStencilShader.destroy();
+
 		m_componentPool.destroy();
 		
 		m_isInitialised = false;
@@ -65,7 +83,52 @@ bool MeshSystem::destroy()
 	return true;
 }
 
-void MeshSystem::render(IEventDataPtr e)
+void MeshSystem::shadowStencilPass(IEventDataPtr e)
+{
+	ShadowStencilPassEventData* event = dynamic_cast<ShadowStencilPassEventData*>(e.get());
+
+	MeshComponent** meshes = m_componentPool.getUsedBufferCache();
+	unsigned int numMeshes = m_componentPool.getUsedSize();
+
+	const Matrix4& invCamera = *(event->m_view);
+	const Matrix4& projection = *(event->m_projection);
+	if(event->m_stencil)
+	{
+
+	}
+	else
+		Engine::g_renderManager.bindShadowPass();
+
+	Engine::g_renderManager.bindShader(m_shadowStencilShader);
+
+	for(unsigned int i=0; i<numMeshes; i++)
+	{
+		MeshComponent* mesh = meshes[i];
+
+		m_getTransformMsg.setHandled(false);
+		m_getTransformMsg.setEntityHandler(mesh->m_entity);
+		Engine::g_entityManager.sendMessage(&m_getTransformMsg);
+
+		if(!m_getTransformMsg.isHandled())
+		{
+			LOG(ERROR, "Entity id: "<<mesh->m_entity<<
+				" does not have a transform component.");
+			continue;
+		}
+		Transform* transform = m_getTransformMsg.getTransform();
+		
+		const Matrix4 modelView = transform->getMatrix() * invCamera;
+
+		m_shader.setMatrix4f("MVP_Matrix", modelView * projection);
+
+		for(unsigned int j=0; j<mesh->m_geometrics.size(); j++)
+		{
+			Engine::g_renderManager.render(mesh->m_geometrics[j]);
+		}
+	}
+}
+
+void MeshSystem::geometricPass(IEventDataPtr e)
 {
 	Engine::g_renderManager.bindGeometricPass();
 

@@ -97,8 +97,8 @@ private:
 
 	std::shared_ptr<UpdateStageEventData> m_updateStageEvent;
 	IEventDataPtr m_preRenderStageEvent;
-	IEventDataPtr m_render1stStageEvent;
-	IEventDataPtr m_render2ndStageEvent;
+	IEventDataPtr m_geometricPassEvent;
+	IEventDataPtr m_lightPassEvent;
 	IEventDataPtr m_postRenderStageEvent;
 
 	InputContext m_inputContext;

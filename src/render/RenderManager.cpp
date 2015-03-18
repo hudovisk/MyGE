@@ -104,6 +104,7 @@ bool RenderManager::initShadowMapBuffer()
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
 	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
 	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width, m_height, 0, 
 		GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
@@ -146,8 +147,8 @@ bool RenderManager::initGBuffer()
 	// Same as before but for depth. DepthTexture is attached differently
 	glGenTextures(1, &m_gbDepthTexture);
 	glBindTexture(GL_TEXTURE_2D, m_gbDepthTexture);
-	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH32F_STENCIL8, m_width, m_height, 0, 
-		GL_DEPTH_STENCIL, GL_FLOAT_32_UNSIGNED_INT_24_8_REV, NULL);
+	glTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT32F, m_width, m_height, 0, 
+		GL_DEPTH_COMPONENT, GL_FLOAT, NULL);
 	glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_TEXTURE_2D,
 		m_gbDepthTexture, 0);
 
@@ -226,13 +227,12 @@ void RenderManager::bindGeometricPass()
 	//              GL_TEXTURE_BIT      | GL_TRANSFORM_BIT | GL_VIEWPORT_BIT);
 }
 
-void RenderManager::bindShadowMapPass()
+void RenderManager::bindShadowPass()
 {
-	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_smFbo);
-
-	glClear(GL_DEPTH_BUFFER_BIT);
-
 	glDepthMask(GL_TRUE);
+
+	glBindFramebuffer(GL_DRAW_FRAMEBUFFER, m_smFbo);
+	glClear(GL_DEPTH_BUFFER_BIT);
 
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_BLEND);
@@ -266,8 +266,12 @@ void RenderManager::bindLightPass()
 		glBindTexture(GL_TEXTURE_2D, m_gbTextures[i]);
 	}
 
-	// glActiveTexture(GL_TEXTURE0 + SHADOWMAP_TEXTURE_DEPTH);
-	// glBindTexture(GL_TEXTURE_2D, m_smDepthTexture);
+	//Read from ShadowMapBuffer
+	glBindFramebuffer(GL_READ_FRAMEBUFFER, m_smFbo);
+	glActiveTexture(GL_TEXTURE0 + SHADOWMAP_TEXTURE_DEPTH);
+	glBindTexture(GL_TEXTURE_2D, m_smDepthTexture);
+	// glTexParameteri (GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_NONE);
+	// glTexParameteri (GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
 }
 
 void RenderManager::bindSkyboxPass()

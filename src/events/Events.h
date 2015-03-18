@@ -1,6 +1,8 @@
 #ifndef EVENTS_H
 #define EVENTS_H
 
+#include "math/Matrix4.h"
+
 #include <memory>
 
 class IEventData;
@@ -132,10 +134,10 @@ public:
 //	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
 };
 
-class Render1stStageEventData : public BaseEventData
+class GeometricPassEventData : public BaseEventData
 {
 public:
-	Render1stStageEventData(const float timeStamp = 0.0f) :
+	GeometricPassEventData(const float timeStamp = 0.0f) :
 		BaseEventData(timeStamp)
 	{
 
@@ -147,17 +149,36 @@ public:
 //	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
 };
 
-class Render2ndStageEventData : public BaseEventData
+class ShadowStencilPassEventData : public BaseEventData
 {
 public:
-	Render2ndStageEventData(const float timeStamp = 0.0f) :
-		BaseEventData(timeStamp)
+	ShadowStencilPassEventData(const float timeStamp = 0.0f) :
+		BaseEventData(timeStamp), m_stencil(false), m_projection(nullptr), m_view(nullptr)
 	{
 
 	}
 
 	//must be a diferent number!!
 	const unsigned int getType() const { return 7; }
+
+	bool m_stencil;
+	const Matrix4* m_projection;
+	const Matrix4* m_view;
+	
+//	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
+};
+
+class LightPassEventData : public BaseEventData
+{
+public:
+	LightPassEventData(const float timeStamp = 0.0f) :
+		BaseEventData(timeStamp)
+	{
+
+	}
+
+	//must be a diferent number!!
+	const unsigned int getType() const { return 8; }
 	
 //	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
 };
@@ -172,7 +193,7 @@ public:
 	}
 
 	//must be a diferent number!!
-	const unsigned int getType() const { return 8; }
+	const unsigned int getType() const { return 9; }
 	
 //	IEventData& copy() const { return WindowClosedEventData(m_timeStamp);}
 };

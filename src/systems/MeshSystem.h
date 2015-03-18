@@ -33,7 +33,8 @@ public:
 	bool init();
 	bool destroy();
 
-	void render(IEventDataPtr e);
+	void geometricPass(IEventDataPtr e);
+	void shadowStencilPass(IEventDataPtr e);
 
 	Component* create();
 	Component* createFromJSON(const rapidjson::Value& jsonObject);
@@ -45,7 +46,8 @@ private:
 	bool m_isInitialised;
 
 	Shader m_shader;
-
+	Shader m_shadowStencilShader;
+	
 	GetTransformMessage m_getTransformMsg;
 
 	ObjectPool<MeshComponent> m_componentPool;

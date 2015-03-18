@@ -77,6 +77,8 @@ private:
 	Geometric* m_lightGeometrics[3];
 
 	ObjectPool<LightComponent> m_componentPools[3];
+
+	std::shared_ptr<ShadowStencilPassEventData> m_shadowStencilEvent;
 };
 
 #endif //LIGHT_SYSTEM_H
