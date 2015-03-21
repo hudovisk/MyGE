@@ -13,4 +13,6 @@ set(core_header_files
 
 add_library(core ${core_source_files} ${core_header_files})
 
-target_link_libraries(core events render my_systems my_debug my_math SDL2 assimp)
+target_link_libraries(core 
+	events render my_systems my_debug 
+	my_math ${EXTRA_LIBS_PATH}/SDL2.lib ${EXTRA_LIBS_PATH}/assimp.lib)

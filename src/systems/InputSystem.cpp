@@ -107,16 +107,17 @@ void InputSystem::loadFile(InputComponent* inputComponent,
 
 	fseek(file, 0L, SEEK_SET);
 
-	char* buffer = (char*) calloc(size,sizeof(char));
+	char* buffer = new char[size + 1];
 	if(!buffer)
 	{
-		// LOG(ERROR, "File: "<<json<<" too big");
+		LOG(ERROR, "File: "<<filePath<<" too big");
 		fclose(file);
 
 		ASSERT(false,"File: "<<filePath<<" too big");
 	}
 
 	fread(buffer, 1, size, file);
+	buffer[size] = '\0';
 
 	xml_document<> doc;
 	try
@@ -170,8 +171,8 @@ void InputSystem::loadFile(InputComponent* inputComponent,
 		node = node->next_sibling();
 	}
 
-	free(buffer);
 	fclose(file);
+	delete [] buffer;
 }
 
 void InputSystem::release(Component* inputComponent)

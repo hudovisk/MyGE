@@ -1,5 +1,1 @@
-{
-	"entities" : "res/scripts/entities.json",
-
-	"defaultCamera" : "camera"
-}
+{ "entities" : "res/scripts/entities.json", "defaultCamera" : "camera" }

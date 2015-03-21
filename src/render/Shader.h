@@ -11,12 +11,13 @@
 class Shader
 {
 public:
+
 	Shader()
 		: m_vertexFilePath(""), m_fragmentFilePath(""), m_program(0),
 		  m_initialised(false) { }
-	~Shader() { destroy(); }
+	virtual ~Shader() { destroy(); }
 
-	bool init(std::string vertexFilePath, std::string fragmentFilePath);
+	virtual bool init(std::string vertexFilePath, std::string fragmentFilePath);
 	bool destroy();
 
 	void setMatrix4f(std::string uniformName, const Matrix4& value);
@@ -29,10 +30,10 @@ public:
 
 	bool isInitialised() { return m_initialised; }
 
-private:
-	bool compileShader(std::string shaderPath, unsigned int shaderId);
-
+protected:
 	friend class RenderManager;
+
+	bool compileShader(std::string shaderPath, unsigned int shaderId);
 
 	std::string m_vertexFilePath;
 	std::string m_fragmentFilePath;

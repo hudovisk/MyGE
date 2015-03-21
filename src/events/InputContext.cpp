@@ -31,11 +31,11 @@ bool InputContext::init(std::string filename)
 	if(file != nullptr)
 	{
 		fseek(file, 0L, SEEK_END);
-		unsigned int size = ftell(file);
+		unsigned int size = ftell(file) + 1;
 
 		fseek(file, 0L, SEEK_SET);
 
-		char* buffer = (char*) calloc(size,sizeof(char));
+		char* buffer = new char[size];
 		if(!buffer)
 		{
 			LOG(ERROR, "File: "<<filename<<" too big");
@@ -45,6 +45,7 @@ bool InputContext::init(std::string filename)
 		}
 
 		fread(buffer, 1, size, file);
+		buffer[size - 1] = '\0';
 
 		xml_document<> doc;
 		try
@@ -54,7 +55,7 @@ bool InputContext::init(std::string filename)
 		catch(parse_error& e)
 		{
 			fclose(file);
-			free(buffer);
+			delete [] buffer;
 
 			ASSERT(false,"InputContext init file: "<<filename<<" error, possibly wrong file or bad XML. parser error: "<<e.what());
 		}
@@ -98,7 +99,7 @@ bool InputContext::init(std::string filename)
 			node = node->next_sibling();
 		}
 
-		free(buffer);
+		delete [] buffer;
 		fclose(file);
 
 		return true;

@@ -3,8 +3,10 @@
 #define MESH_COMPONENT_H
 
 #include "systems/System.h"
+
 #include "render/Geometric.h"
-#include "render/Shader.h"
+#include "render/GeometricPassShader.h"
+
 #include "memory/ObjectPool.h"
 #include "events/Events.h"
 
@@ -45,7 +47,7 @@ private:
 
 	bool m_isInitialised;
 
-	Shader m_shader;
+	GeometricPassShader m_gpShader;
 	Shader m_shadowStencilShader;
 	
 	GetTransformMessage m_getTransformMsg;

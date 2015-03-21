@@ -181,7 +181,7 @@ void Engine::render()
 	if(m_drawGBuffer)
 		g_renderManager.renderGBuffer();	
 
-	g_debugRenderManager.render();
+	//g_debugRenderManager.render();
 
 	g_renderManager.postRender();
 	g_eventManager.triggerEvent(m_postRenderStageEvent);

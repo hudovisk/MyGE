@@ -12,7 +12,7 @@ struct PointLight
 	vec3 pos;
 	vec3 color;
 	float ambIntensity;
-	float difIntensity;
+	float diffIntensity;
 	Attenuation att;
 };
 
@@ -37,7 +37,7 @@ vec4 calcLightColor(vec3 position, vec3 normal, vec3 color, vec3 lightDir)
 
 	if(diffuseFactor > 0)
 	{
-		diffuseColor = vec4(gLight.color, 1.0) * gLight.difIntensity * diffuseFactor;
+		diffuseColor = vec4(gLight.color, 1.0) * gLight.diffIntensity * diffuseFactor;
 
 		vec3 vertexToEye = normalize(gEyeWorldPos - position);
 		vec3 lightReflect = normalize(reflect(lightDir, normal));

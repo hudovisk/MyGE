@@ -31,9 +31,9 @@ bool MeshSystem::init()
 		return false;
 	}
 
-	if(!m_shader.init("res/shaders/vertex.glsl", "res/shaders/fragment.glsl"))
+	if(!m_gpShader.init("res/shaders/vertex.glsl", "res/shaders/fragment.glsl"))
 	{
-		LOG(ERROR, "Default MeshSystem shader could not initialise.");
+		LOG(ERROR, "Default MeshSystem GeometricPass shader could not initialise.");
 		return false;
 	}
 
@@ -73,7 +73,7 @@ bool MeshSystem::destroy()
 			EventListenerDelegate::from_method<MeshSystem,&MeshSystem::shadowStencilPass>(this),
 			shadowEvent.getType());
 
-		m_shader.destroy();
+		m_gpShader.destroy();
 		m_shadowStencilShader.destroy();
 
 		m_componentPool.destroy();
@@ -92,11 +92,7 @@ void MeshSystem::shadowStencilPass(IEventDataPtr e)
 
 	const Matrix4& invCamera = *(event->m_view);
 	const Matrix4& projection = *(event->m_projection);
-	if(event->m_stencil)
-	{
-
-	}
-	else
+	if(!event->m_stencil)
 		Engine::g_renderManager.bindShadowPass();
 
 	Engine::g_renderManager.bindShader(m_shadowStencilShader);
@@ -119,7 +115,7 @@ void MeshSystem::shadowStencilPass(IEventDataPtr e)
 		
 		const Matrix4 modelView = transform->getMatrix() * invCamera;
 
-		m_shader.setMatrix4f("MVP_Matrix", modelView * projection);
+		m_shadowStencilShader.setMatrix4f("MVP_Matrix", modelView * projection);
 
 		for(unsigned int j=0; j<mesh->m_geometrics.size(); j++)
 		{
@@ -135,7 +131,7 @@ void MeshSystem::geometricPass(IEventDataPtr e)
 	MeshComponent** meshes = m_componentPool.getUsedBufferCache();
 	unsigned int numMeshes = m_componentPool.getUsedSize();
 
-	Engine::g_renderManager.bindShader(m_shader);
+	Engine::g_renderManager.bindShader(m_gpShader);
 
 	const Matrix4& invCamera = 
 		Engine::g_renderManager.getDefaultCameraTransform()->getInverseMatrix();
@@ -156,11 +152,11 @@ void MeshSystem::geometricPass(IEventDataPtr e)
 		}
 		Transform* transform = m_getTransformMsg.getTransform();
 		
-		const Matrix4 modelView = transform->getMatrix() * invCamera;
+		const Matrix4& world = transform->getMatrix();
+		const Matrix4 worldViewProjection = (world * invCamera) * projection;
 
-		m_shader.setMatrix4f("model_Matrix", transform->getMatrix());
-		m_shader.setMatrix4f("modelView_Matrix", modelView);
-		m_shader.setMatrix4f("MVP_Matrix", modelView * projection);
+		m_gpShader.setWorldMatrix(world);
+		m_gpShader.setWVPMatrix(worldViewProjection);
 
 		for(unsigned int j=0; j<mesh->m_geometrics.size(); j++)
 		{
@@ -170,13 +166,13 @@ void MeshSystem::geometricPass(IEventDataPtr e)
 			if(geometric->m_material.m_diffuseTexture != nullptr)
 			{
 				Engine::g_renderManager.bind2DTexture(texCount, geometric->m_material.m_diffuseTexture);
-				m_shader.set1i("gDiffuseSampler", texCount++);
-				m_shader.set1i("useDiffSampler", 1);
+				m_gpShader.setDiffuseSampler(texCount++);
+				m_gpShader.setDiffuseSamplerFlag(true);
 			}
 			else
 			{
-				m_shader.setVec3f("gDiffColor", geometric->m_material.m_diffColor);
-				m_shader.set1i("useDiffSampler", 0);
+				m_gpShader.setDiffuseColor(geometric->m_material.m_diffColor);
+				m_gpShader.setDiffuseSamplerFlag(false);
 			}
 
 			// m_shader.set1f("gMaterial.shininess", geometric->m_material.m_shineness);
@@ -184,12 +180,12 @@ void MeshSystem::geometricPass(IEventDataPtr e)
 			if(geometric->m_material.m_normalsTexture != nullptr)
 			{
 				Engine::g_renderManager.bind2DTexture(texCount, geometric->m_material.m_normalsTexture);
-				m_shader.set1i("gNormalsSampler", texCount++);
-				m_shader.set1i("useNormalSampler", 1);
+				m_gpShader.setNormalSampler(texCount++);
+				m_gpShader.setNormalSamplerFlag(true);
 			}
 			else
 			{
-				m_shader.set1i("useNormalSampler", 0);	
+				m_gpShader.setNormalSamplerFlag(false);
 			}
 
 			Engine::g_renderManager.render(mesh->m_geometrics[j]);
@@ -218,79 +214,6 @@ Component* MeshSystem::createFromJSON(const rapidjson::Value& jsonObject)
 
 	return component;
 }
-
-// void MeshSystem::loadFile(MeshComponent* mesh, std::string filePath)
-// {
-// 	Assimp::Importer importer;
-// 	const aiScene *scene = importer.ReadFile(filePath, 
-// 		aiProcess_Triangulate | aiProcess_GenSmoothNormals | aiProcess_FlipUVs);
-	
-// 	//GET DIRECTORY TO LOAD TEXTURES CORRECTLY
-// 	std::string::size_type slashIndex = filePath.find_last_of("/");
-// 	std::string dir;
-// 	if (slashIndex == std::string::npos) {
-//       dir = ".";
-// 	}
-// 	else if (slashIndex == 0) {
-// 		dir = "/";
-// 	}
-// 	else {
-// 		dir = filePath.substr(0, slashIndex);
-// 	}
-
-// 	if(!scene)
-// 	{
-// 		LOG(ERROR, "Error importing: "<<filePath<<". "<<importer.GetErrorString());
-// 		return;
-// 	}
-
-// 	//LOAD TEXTURES
-// 	std::vector<Texture*> textures(scene->mNumMaterials);
-// 	for(unsigned int i=0; i < scene->mNumMaterials; i++)
-// 	{
-// 		const aiMaterial* aMaterial = scene->mMaterials[i];
-// 		if(aMaterial->GetTextureCount(aiTextureType_DIFFUSE) > 0)
-// 		{
-// 			aiString texturePath;
-// 			if(aMaterial->GetTexture(aiTextureType_DIFFUSE, 0, &texturePath,
-// 				NULL, NULL, NULL, NULL, NULL) == AI_SUCCESS)
-// 			{
-// 				//CONVERT SLASHES FOR LINUX
-// 				int aux = 0;
-// 	  			while(texturePath.data[aux] != '\0')
-// 	  			{
-// 	  				if(texturePath.data[aux] == '\\')
-// 	  					texturePath.data[aux] = '/';
-// 	  				aux++;
-// 	  			}
-// 	  			std::string fullPath = dir + "/" + texturePath.data;
-// 	  			// std::cout<<"Pos: "<<pos++<<" Texture: "<<fullPath<<std::endl;
-//   				textures[i] = Engine::g_renderManager.createTextureFromImg(fullPath);
-// 			}
-// 		}
-// 	}
-
-// 	//LOAD VERTICES
-// 	for(unsigned int i=0; i < scene->mNumMeshes; i++)
-// 	{
-// 		const aiMesh* aMesh = scene->mMeshes[i];
-		
-// 		std::vector<Vertex> vertices(aMesh->mNumVertices);
-// 		std::vector<unsigned int> indices(aMesh->mNumFaces * 3);
-
-// 		getVerticesAndIndices(vertices, indices, aMesh);
-
-// 		Geometric* geometric = Engine::g_renderManager.createGeometric(vertices, indices);
-// 		if(aMesh->HasTextureCoords(0))
-// 		{
-// 			// std::cout<<"Index: "<<aMesh->mMaterialIndex;
-// 			// std::cout<<" Address: "<<textures[aMesh->mMaterialIndex]<<std::endl;
-// 			geometric->m_texture = textures[aMesh->mMaterialIndex];
-// 		}
-
-// 		mesh->m_geometrics.push_back(geometric);
-// 	}
-// }
 
 void MeshSystem::release(Component* component)
 {

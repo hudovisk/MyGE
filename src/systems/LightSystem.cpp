@@ -4,9 +4,9 @@
 #include "core/Engine.h"
 #include "debug/MyAssert.h"
 
-#include "assimp-3.1.1/Importer.hpp"
-#include "assimp-3.1.1/postprocess.h"
-#include "assimp-3.1.1/scene.h"
+#include "assimp/Importer.hpp"
+#include "assimp/postprocess.h"
+#include "assimp/scene.h"
 
 extern const float PIdiv180;
 
@@ -61,21 +61,18 @@ bool LightSystem::init()
 
 bool LightSystem::initShaders()
 {
-	if(!m_lightShaders[LightComponent::POINT_TYPE].init("res/shaders/lightVertex.glsl", 
-		"res/shaders/pointLightFragment.glsl"))
+	if(!m_lpPointShader.init("res/shaders/lightVertex.glsl", "res/shaders/pointLightFragment.glsl"))
 	{
 		LOG(ERROR, "Default point light shader could not initialise.");
 		return false;
 	}
 
-	if(!m_lightShaders[LightComponent::DIRECTIONAL_TYPE].init("res/shaders/lightVertex.glsl", 
-		"res/shaders/dirLightFragment.glsl"))
+	if(!m_lpDirShader.init("res/shaders/lightVertex.glsl", "res/shaders/dirLightFragment.glsl"))
 	{
 		LOG(ERROR, "Default directional light shader could not initialise.");
 		return false;
 	}
-	if(!m_lightShaders[LightComponent::SPOT_TYPE].init("res/shaders/lightVertex.glsl", 
-		"res/shaders/spotLightFragment.glsl"))
+	if(!m_lpSpotShader.init("res/shaders/lightVertex.glsl", "res/shaders/spotLightFragment.glsl"))
 	{
 		LOG(ERROR, "Default spot light shader could not initialise.");
 		return false;
@@ -108,9 +105,12 @@ bool LightSystem::destroy()
 		for(int i=0; i < LightComponent::NUM_TYPES; i++)
 		{
 			m_componentPools[i].destroy();
-			m_lightShaders[i].destroy();
-			// Engine::g_renderManager.releaseGeometric(m_lightGeometrics[i]);
+			//Engine::g_renderManager.releaseGeometric(m_lightGeometrics[i]);
 		}
+		
+		m_lpPointShader.destroy();
+		m_lpSpotShader.destroy();
+		m_lpDirShader.destroy();
 
 		m_isInitialised = false;
 	}
@@ -120,7 +120,7 @@ bool LightSystem::destroy()
 
 void LightSystem::render(IEventDataPtr e)
 {
-	Engine::g_renderManager.bindLightPass();
+	//Engine::g_renderManager.bindLightPass();
 
 	// renderPointLights();
 
@@ -131,24 +131,24 @@ void LightSystem::render(IEventDataPtr e)
 
 void LightSystem::renderPointLights()
 {
-	Engine::g_renderManager.bindShader(m_lightShaders[LightComponent::POINT_TYPE]);
+	Engine::g_renderManager.bindShader(m_lpPointShader);
 	//Set uniform stuff.
-	m_lightShaders[LightComponent::POINT_TYPE].set1i("gPositionMap",
+	m_lpPointShader.set1i("gPositionMap",
 		RenderManager::GBUFFER_TEXTURE_TYPE_POSITION);
-	m_lightShaders[LightComponent::POINT_TYPE].set1i("gNormalMap",
+	m_lpPointShader.set1i("gNormalMap",
 		RenderManager::GBUFFER_TEXTURE_TYPE_NORMAL);
-	m_lightShaders[LightComponent::POINT_TYPE].set1i("gColorMap", 
+	m_lpPointShader.set1i("gColorMap", 
 		RenderManager::GBUFFER_TEXTURE_TYPE_DIFFUSE);
 
 	const Matrix4 projection;
 
 	float width = Engine::g_renderManager.getWidth();
 	float height = Engine::g_renderManager.getHeight();
-	m_lightShaders[LightComponent::POINT_TYPE].set2f("gScreenSize",
+	m_lpPointShader.set2f("gScreenSize",
 				 width, height);
 
 	const Vec3& cameraPos = Engine::g_renderManager.getDefaultCameraTransform()->getPosition();
-	m_lightShaders[LightComponent::POINT_TYPE].setVec3f("gEyeWorldPos",
+	m_lpPointShader.setVec3f("gEyeWorldPos",
 				 cameraPos);
 
 	GetTransformMessage message;
@@ -169,17 +169,17 @@ void LightSystem::renderPointLights()
 		if(message.isHandled())
 		{
 			//More uniform stuff.
-			m_lightShaders[LightComponent::POINT_TYPE].setMatrix4f("MVP_Matrix",
+			m_lpPointShader.setMatrix4f("MVP_Matrix",
 				 /*modelView **/ projection);
-			m_lightShaders[LightComponent::POINT_TYPE].setVec3f("gLight.pos",
+			m_lpPointShader.setVec3f("gLight.pos",
 				 message.getTransform()->getPosition());
-			m_lightShaders[LightComponent::POINT_TYPE].setVec3f("gLight.color",
+			m_lpPointShader.setVec3f("gLight.color",
 				 component->m_color);
-			m_lightShaders[LightComponent::POINT_TYPE].set1f("gLight.ambIntensity",
+			m_lpPointShader.set1f("gLight.ambIntensity",
 				component->m_ambIntensity);
-			m_lightShaders[LightComponent::POINT_TYPE].set1f("gLight.difIntensity",
+			m_lpPointShader.set1f("gLight.difIntensity",
 				component->m_difIntensity);
-			m_lightShaders[LightComponent::POINT_TYPE].set1f("gLight.att.expo",
+			m_lpPointShader.set1f("gLight.att.expo",
 				component->m_expCoefficient);
 			//Finally render it.
 			Engine::g_renderManager.render(m_lightGeometrics[LightComponent::DIRECTIONAL_TYPE]);
@@ -193,30 +193,25 @@ void LightSystem::renderPointLights()
 
 void LightSystem::renderDirectionalLights()
 {
-	Engine::g_renderManager.bindShader(m_lightShaders[LightComponent::DIRECTIONAL_TYPE]);
+	Engine::g_renderManager.bindLightPass();
+	Engine::g_renderManager.bindShader(m_lpDirShader);
 
 	//Set uniform stuff.
-	m_lightShaders[LightComponent::DIRECTIONAL_TYPE].set1i("gPositionMap",
-		RenderManager::GBUFFER_TEXTURE_TYPE_POSITION);
-	m_lightShaders[LightComponent::DIRECTIONAL_TYPE].set1i("gNormalMap",
-		RenderManager::GBUFFER_TEXTURE_TYPE_NORMAL);
-	m_lightShaders[LightComponent::DIRECTIONAL_TYPE].set1i("gColorMap", 
-		RenderManager::GBUFFER_TEXTURE_TYPE_DIFFUSE);
+	m_lpDirShader.setPositionSampler(RenderManager::GBUFFER_TEXTURE_TYPE_POSITION);
+	m_lpDirShader.setNormalSampler(RenderManager::GBUFFER_TEXTURE_TYPE_NORMAL);
+	m_lpDirShader.setColorSampler(RenderManager::GBUFFER_TEXTURE_TYPE_DIFFUSE);
 
 	//identity projection
 	Matrix4 projection;
 	projection.identity();
-	m_lightShaders[LightComponent::DIRECTIONAL_TYPE].setMatrix4f("MVP_Matrix",
-				 projection);
+	m_lpDirShader.setWVP(projection);
 
 	float width = Engine::g_renderManager.getWidth();
 	float height = Engine::g_renderManager.getHeight();
-	m_lightShaders[LightComponent::DIRECTIONAL_TYPE].set2f("gScreenSize",
-				 width, height);
+	m_lpDirShader.setScreenSize(width, height);
 
 	const Vec3& cameraPos = Engine::g_renderManager.getDefaultCameraTransform()->getPosition();
-	m_lightShaders[LightComponent::DIRECTIONAL_TYPE].setVec3f("gEyeWorldPos",
-				 cameraPos);
+	m_lpDirShader.setEyePos(cameraPos);
 
 	//Get all directional lights
 	LightComponent** directionalLights =  
@@ -227,14 +222,10 @@ void LightSystem::renderDirectionalLights()
 	{
 		LightComponent* component = directionalLights[i];
 
-		m_lightShaders[LightComponent::DIRECTIONAL_TYPE].setVec3f("gLight.direction",
-			 component->m_direction);
-		m_lightShaders[LightComponent::DIRECTIONAL_TYPE].setVec3f("gLight.color",
-			 component->m_color);
-		m_lightShaders[LightComponent::DIRECTIONAL_TYPE].set1f("gLight.ambIntensity",
-			component->m_ambIntensity);
-		m_lightShaders[LightComponent::DIRECTIONAL_TYPE].set1f("gLight.difIntensity",
-			component->m_difIntensity);
+		m_lpDirShader.setLightDir(component->m_direction);
+		m_lpDirShader.setLightColor(component->m_color);
+		m_lpDirShader.setAmbIntensity(component->m_ambIntensity);
+		m_lpDirShader.setDiffIntensity(component->m_difIntensity);
 
 		//Finally render it.
 		Engine::g_renderManager.render(m_lightGeometrics[LightComponent::DIRECTIONAL_TYPE]);
@@ -244,24 +235,12 @@ void LightSystem::renderDirectionalLights()
 
 void LightSystem::renderSpotLights()
 {
-	//Set uniform stuff.
-	m_lightShaders[LightComponent::SPOT_TYPE].set1i("gPositionMap",
-		RenderManager::GBUFFER_TEXTURE_TYPE_POSITION);
-	m_lightShaders[LightComponent::SPOT_TYPE].set1i("gNormalMap",
-		RenderManager::GBUFFER_TEXTURE_TYPE_NORMAL);
-	m_lightShaders[LightComponent::SPOT_TYPE].set1i("gColorMap", 
-		RenderManager::GBUFFER_TEXTURE_TYPE_DIFFUSE);
-
 	const Matrix4 projection = Engine::g_renderManager.getDefaultCameraProjection();
 
 	float width = Engine::g_renderManager.getWidth();
 	float height = Engine::g_renderManager.getHeight();
-	m_lightShaders[LightComponent::SPOT_TYPE].set2f("gScreenSize",
-				 width, height);
 
 	const Vec3& cameraPos = Engine::g_renderManager.getDefaultCameraTransform()->getPosition();
-	m_lightShaders[LightComponent::SPOT_TYPE].setVec3f("gEyeWorldPos",
-				 cameraPos);
 
 	GetTransformMessage message;
 
@@ -280,8 +259,8 @@ void LightSystem::renderSpotLights()
 
 		if(message.isHandled())
 		{
-			Matrix4& model = message.getTransform()->getMatrix();
-			Matrix4& invModel = message.getTransform()->getInverseMatrix();
+			const Matrix4& model = message.getTransform()->getMatrix();
+			const Matrix4& invModel = message.getTransform()->getInverseMatrix();
 
 			Vec3 direction(-model.m_data[8], -model.m_data[9], -model.m_data[10]);
 
@@ -292,38 +271,28 @@ void LightSystem::renderSpotLights()
 			Engine::g_eventManager.triggerEvent(m_shadowStencilEvent);
 
 			Engine::g_renderManager.bindLightPass();
-			Engine::g_renderManager.bindShader(m_lightShaders[LightComponent::SPOT_TYPE]);
+			Engine::g_renderManager.bindShader(m_lpSpotShader);
 
-			m_lightShaders[LightComponent::SPOT_TYPE].set1i("gShadowMap",
-				RenderManager::SHADOWMAP_TEXTURE_DEPTH);
-			m_lightShaders[LightComponent::SPOT_TYPE].set2f("gScreenSize",
-				 width, height);
-			m_lightShaders[LightComponent::SPOT_TYPE].set1i("gPositionMap",
-				RenderManager::GBUFFER_TEXTURE_TYPE_POSITION);
-			m_lightShaders[LightComponent::SPOT_TYPE].set1i("gNormalMap",
-				RenderManager::GBUFFER_TEXTURE_TYPE_NORMAL);
-			m_lightShaders[LightComponent::SPOT_TYPE].set1i("gColorMap", 
-				RenderManager::GBUFFER_TEXTURE_TYPE_DIFFUSE);
-			m_lightShaders[LightComponent::SPOT_TYPE].setVec3f("gEyeWorldPos",
-				 cameraPos);
+			m_lpSpotShader.setPositionSampler(RenderManager::GBUFFER_TEXTURE_TYPE_POSITION);
+			m_lpSpotShader.setNormalSampler(RenderManager::GBUFFER_TEXTURE_TYPE_NORMAL);
+			m_lpSpotShader.setColorSampler(RenderManager::GBUFFER_TEXTURE_TYPE_DIFFUSE);
+			m_lpSpotShader.setShadowSampler(RenderManager::SHADOWMAP_TEXTURE_DEPTH);
+
+			m_lpSpotShader.setEyePos(cameraPos);
+			m_lpSpotShader.setScreenSize(width, height);
+
+			const Matrix4 identity;
+			m_lpSpotShader.setWVP(identity);
 
 			//More uniform stuff.
-			m_lightShaders[LightComponent::SPOT_TYPE].setMatrix4f("MVPLight_Matrix",
-				 invModel * projection);
-			m_lightShaders[LightComponent::SPOT_TYPE].setVec3f("gLight.pos",
-				 message.getTransform()->getPosition());
-			m_lightShaders[LightComponent::SPOT_TYPE].setVec3f("gLight.direction",
-				 direction);
-			m_lightShaders[LightComponent::SPOT_TYPE].setVec3f("gLight.color",
-				 component->m_color);
-			m_lightShaders[LightComponent::SPOT_TYPE].set1f("gLight.minSpotFactor",
-				component->m_minSpotFactor);
-			m_lightShaders[LightComponent::SPOT_TYPE].set1f("gLight.ambIntensity",
-				component->m_ambIntensity);
-			m_lightShaders[LightComponent::SPOT_TYPE].set1f("gLight.difIntensity",
-				component->m_difIntensity);
-			m_lightShaders[LightComponent::SPOT_TYPE].set1f("gLight.att.expo",
-				component->m_expCoefficient);
+			m_lpSpotShader.setWVPLight(invModel * projection);
+			m_lpSpotShader.setLightPos(message.getTransform()->getPosition());
+			m_lpSpotShader.setLightDir(direction);
+			m_lpSpotShader.setLightColor(component->m_color);
+			m_lpSpotShader.setMinSpotFactor(component->m_minSpotFactor);
+			m_lpSpotShader.setAmbIntensity(component->m_ambIntensity);
+			m_lpSpotShader.setDiffIntensity(component->m_difIntensity);
+			m_lpSpotShader.setExpoAttenuation(component->m_expCoefficient);
 
 			//Finally render it
 			Engine::g_renderManager.render(m_lightGeometrics[LightComponent::DIRECTIONAL_TYPE]);

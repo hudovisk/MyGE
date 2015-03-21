@@ -74,7 +74,7 @@ bool Shader::compileShader(std::string shaderPath, unsigned int shaderId)
 	int fileSize = ftell(file);
 	fseek(file, 0L, SEEK_SET);
 
-	char* fileBuffer = (char*) calloc(fileSize,sizeof(char));
+	char* fileBuffer = new char[fileSize];
 	if(!fileBuffer)
 	{
 		LOG(ERROR, "Could not allocate memory for shader file: "<<fileBuffer);
@@ -100,13 +100,13 @@ bool Shader::compileShader(std::string shaderPath, unsigned int shaderId)
 		LOG(ERROR,"Shader compile error, "<<shaderPath<<" : "<<log);
 
 		delete [] log;
-		free(fileBuffer);
+		delete [] fileBuffer;
 		fclose(file);
 
 		return false;
 	}
 
-	free(fileBuffer);
+	delete [] fileBuffer;
 	fclose(file);
 
 	return true;

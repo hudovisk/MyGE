@@ -1,4 +1,5 @@
 res/models/*
 build/*
 doc/*
+desktop.ini
 !doc/Doxyfile

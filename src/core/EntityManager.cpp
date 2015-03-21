@@ -75,7 +75,7 @@ bool EntityManager::init()
 				dynamic_cast<CameraComponent*> (itComponent->second));
 		}
 	}
-	free(buffer);
+	delete [] buffer;
 
 	m_isInitialised = true;
 
@@ -118,11 +118,11 @@ char* EntityManager::getFileBuffer(std::string filePath)
 	FILE* file = fopen(filePath.c_str(), "rb");
 	ASSERT(file != nullptr, "Couldn't open file: "<<filePath);
 	fseek(file, 0L, SEEK_END);
-	unsigned int size = ftell(file);
+	unsigned int size = ftell(file) + 1;
 
 	fseek(file, 0L, SEEK_SET);
 
-	char* buffer = (char*) calloc(size,sizeof(char));
+	char* buffer = new char[size];
 	if(!buffer)
 	{
 		// LOG(ERROR, "File: "<<json<<" too big");
@@ -131,6 +131,8 @@ char* EntityManager::getFileBuffer(std::string filePath)
 		ASSERT(false,"File: "<<filePath<<" too big");
 	}
 	fread(buffer, 1, size, file);
+	buffer[size - 1] = '\0';
+
 	fclose(file);
 
 	return buffer;

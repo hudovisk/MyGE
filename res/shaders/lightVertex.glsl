@@ -3,11 +3,9 @@
 // Input vertex data, different for all executions of this shader.
 layout(location = 0) in vec4 vertexPosition_modelspace;
 
-// uniform mat4 model_Matrix;
-uniform mat4 MVP_Matrix;
-// uniform sampler2D gSampler; 
+uniform mat4 WVP_Matrix;
 
 void main()
 {
-    gl_Position = vertexPosition_modelspace * MVP_Matrix;
+    gl_Position = vertexPosition_modelspace * WVP_Matrix;
 }

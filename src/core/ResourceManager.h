@@ -4,9 +4,9 @@
 
 #include "render/Geometric.h"
 
-#include "assimp-3.1.1/Importer.hpp"
-#include "assimp-3.1.1/postprocess.h"
-#include "assimp-3.1.1/scene.h"
+#include "assimp/Importer.hpp"
+#include "assimp/postprocess.h"
+#include "assimp/scene.h"
 
 #include <string>
 #include <vector>

@@ -6,7 +6,7 @@
 
 #include "events/Events.h"
 
-#include "render/Shader.h"
+#include "render/LightPassShader.h"
 #include "render/Geometric.h"
 
 #include "memory/ObjectPool.h"
@@ -72,7 +72,9 @@ private:
 
 	bool m_isInitialised;
 
-	Shader m_lightShaders[3];
+	LightPassShader m_lpSpotShader;
+	LightPassShader m_lpPointShader;
+	LightPassShader m_lpDirShader;
 
 	Geometric* m_lightGeometrics[3];
 
