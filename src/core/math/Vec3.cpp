@@ -8,7 +8,7 @@
 #include <cmath>
 #include <utility>
 
-#include "math/Vec3.h"
+#include "Vec3.h"
 
 Vec3 operator*(const float lhs, const Vec3& rhs)
 {

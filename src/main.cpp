@@ -1,12 +1,16 @@
 
 #include "main.h"
+#include "ResourceManager.h"
 
-int main(int argc, char** argv)
+int main()
 {
-	Engine engine;
+	Engine *engine = Engine::getInstance();
 
-	if(engine.init())
-		engine.start();
+	IManager *resourceManager = new ResourceManager();
+	engine->registerManager(resourceManager);
+
+	if (engine->init())
+		engine->start();
 	else
 		return -1;
 

@@ -7,7 +7,7 @@
 
 #include <cmath>
 
-#include "math/Quaternion.h"
+#include "Quaternion.h"
 
 const float PIdiv180 = 0.0174532925199433;
 

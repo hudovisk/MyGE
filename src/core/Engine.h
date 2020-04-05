@@ -1,13 +1,9 @@
-#ifndef ENGINE_H
-#define ENGINE_H
+#pragma once
 
-#include "events/EventManager.h"
-#include "render/RenderManager.h"
-#include "debug/DebugRenderManager.h"
-#include "core/EntityManager.h"
-#include "core/ResourceManager.h"
+#include "IManager.h"
 
-#include "events/InputContext.h"
+#include <map>
+
 /**
  * @brief EngineState enum
  * @details Represents the possible states the engine can be.
@@ -21,14 +17,6 @@ enum class EngineState
 	EXITED,
 };
 
-enum class UpdateStage
-{
-	UPDATE,
-	PRE_RENDER,
-	RENDER,
-	POST_RENDER,
-};
-
 /**
  * @brief Engine class
  * @details The core of the game engine.
@@ -36,11 +24,7 @@ enum class UpdateStage
 class Engine
 {
 public:
-	/**
-	* Constructor.
-	* Default constructor
-	*/
-	Engine();
+	static Engine *getInstance();
 
 	/**
  	* Destructor.
@@ -69,42 +53,31 @@ public:
 	void start();
 
 	/**
-	* Window closed event callback.
+	* Stop (main loop) method.
 	*/
-	void onWindowClosed(IEventDataPtr event);
+	void stop();
+
+	bool registerManager(IManager *manager);
+
+	std::weak_ptr<IManager> getManager(IManagerHandler handler);
 
 	EngineState getCurrentState();
 
-	static EventManager g_eventManager;
-	static RenderManager g_renderManager;
-	static DebugRenderManager g_debugRenderManager;
-	static EntityManager g_entityManager;
-	static ResourceManager g_resourceManager;
-
 private:
+	/**
+		* Constructor.
+		* Default constructor
+		*/
+	Engine();
+
 	void update(float updateTime);
 	void render();
 
-	enum INPUT_MESSAGES
-	{
-		TOGGLE_DRAW_GBUFFER = 1,
-		TOGGLE_DRAW_FPS = 2,
-		TOGGLE_PAUSE = 3,
-		EXIT = 4,
-	};
+	static Engine *s_engine;
 
 	EngineState m_state;
 
-	std::shared_ptr<UpdateStageEventData> m_updateStageEvent;
-	IEventDataPtr m_preRenderStageEvent;
-	IEventDataPtr m_geometricPassEvent;
-	IEventDataPtr m_lightPassEvent;
-	IEventDataPtr m_postRenderStageEvent;
-
-	InputContext m_inputContext;
-
 	bool m_initialised;
-	bool m_drawGBuffer;
-};
 
-#endif
+	std::map<IManagerHandler, std::shared_ptr<IManager>> m_managers;
+};

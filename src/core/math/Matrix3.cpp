@@ -1,7 +1,7 @@
 #include <utility>
 #include <cstring>
 
-#include "math/Matrix3.h"
+#include "Matrix3.h"
 
 Matrix3::Matrix3()
 {

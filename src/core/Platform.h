@@ -1,7 +1,5 @@
 
-#ifndef PLATFORM_H
-#define PLATFORM_H
-
+#pragma once
 /**
  * @brief Platform especific methods.
  * @details For now, this class is reponsible for intialise SDL and use it for aquire time.
@@ -39,7 +37,4 @@ public:
 	 * @return time in seconds
 	 */
 	static float getHighResTime();
-
 };
-
-#endif //PLATFORM_H

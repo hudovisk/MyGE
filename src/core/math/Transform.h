@@ -1,9 +1,9 @@
 
 #pragma once
 
-#include "math/Quaternion.h"
-#include "math/Matrix4.h"
-#include "math/Vec4.h"
+#include "Quaternion.h"
+#include "Matrix4.h"
+#include "Vec4.h"
 
 class Transform
 {

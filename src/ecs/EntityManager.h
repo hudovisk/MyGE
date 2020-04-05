@@ -3,7 +3,7 @@
 #define ENTITY_MANAGER_H
 
 #include "systems/System.h"
-#include "core/Messages.h"
+#include "Messages.h"
 
 #include "rapidjson/document.h"
 

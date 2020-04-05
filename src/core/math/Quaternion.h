@@ -6,9 +6,9 @@
  */
 #pragma once
 
-#include "math/Vec3.h"
-#include "math/Matrix4.h"
-#include "math/Matrix3.h"
+#include "Vec3.h"
+#include "Matrix4.h"
+#include "Matrix3.h"
 
 class Quaternion
 {

@@ -1,5 +1,5 @@
 
-#include "core/Platform.h"
+#include "Platform.h"
 #include "debug/Logger.h"
 
 #include <SDL2/SDL.h>

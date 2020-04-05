@@ -5,7 +5,7 @@
  *      Author: hudo
  */
 
-#include "debug/Logger.h"
+#include "Logger.h"
 #include <ctime>   // localtime
 #include <sstream> // stringstream
 #include <string>  // string

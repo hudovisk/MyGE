@@ -1,0 +1,1 @@
+2020-04-04.21:03:46 [INFO] - /Users/hudoassenco/Documents/Projetos/MyGE/src/core/Engine.cpp:60 - Engine initialised

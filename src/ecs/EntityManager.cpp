@@ -1,5 +1,6 @@
 
-#include "core/EntityManager.h"
+#include "EntityManager.h"
+#include "Engine.h"
 
 #include "systems/MeshSystem.h"
 #include "systems/SpatialSystem.h"
@@ -11,7 +12,6 @@
 #include "systems/SkyboxSystem.h"
 
 #include "debug/MyAssert.h"
-#include "core/Engine.h"
 
 #include <iostream>
 

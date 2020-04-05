@@ -1,43 +1,36 @@
-cmake_minimum_required (VERSION 2.6)
+cmake_minimum_required (VERSION 3.17)
 
 project (MyGE)
-
-set(CMAKE_CXX_FLAGS "-Wall -std=c++11 -g3")
 
 #VERSION
 set (${PROJECT_NAME}_VERSION_MAJOR 0)
 set (${PROJECT_NAME}_VERSION_MINOR 1)
 
-if(WIN32)
-	set(EXTRA_LIBS_PATH ${CMAKE_SOURCE_DIR}/extra/lib/windows/x86_64)
-else(UNIX)
-	set(EXTRA_LIBS_PATH ${CMAKE_SOURCE_DIR}/extra/lib/linux/x86_64)
-endif()
-
-#libs
-#link_directories(${CMAKE_SOURCE_DIR}/extra/lib/x64/)
-
-#include
-include_directories(src/)
-include_directories(extra/include)
+# find_package(SDL2 REQUIRED)
 
 #sub-systems
-add_subdirectory(src/systems)
-add_subdirectory(src/math)
+# add_subdirectory(src/systems)
+# add_subdirectory(src/math)
 add_subdirectory(src/core)
-add_subdirectory(src/debug)
+add_subdirectory(src/resource)
+# add_subdirectory(src/debug)
 #add_subdirectory(src/memory)
-add_subdirectory(src/events)
-add_subdirectory(src/render)
+# add_subdirectory(src/events)
+# add_subdirectory(src/render)
 
 add_executable (MyGE src/main.cpp src/main.h)
-if(WIN32)
-	target_link_libraries(MyGE core ${EXTRA_LIBS_PATH}/SDL2main.lib)
-else(UNIX)
-	target_link_libraries(MyGE core)
+
+target_compile_features(MyGE PUBLIC cxx_std_11)
+
+# target_link_libraries(MyGE core SDL2::SDL2)
+
+target_link_libraries(MyGE core resource)
+
+if(UNIX)
+	target_compile_options(MyGE PRIVATE -Werror -Wall -Wextra)
 endif()
 
-set_target_properties( MyGE
+set_target_properties(MyGE
     PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_SOURCE_DIR}/bin/x86_64/"
 )

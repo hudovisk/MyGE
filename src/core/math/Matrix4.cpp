@@ -8,7 +8,7 @@
 #include <utility>
 #include <cstring>
 
-#include "math/Matrix4.h"
+#include "Matrix4.h"
 
 Matrix4::Matrix4()
 {
