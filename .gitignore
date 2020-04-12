@@ -1,6 +1,7 @@
 res/models/*
 build/*
 doc/*
+bin
 desktop.ini
 !doc/Doxyfile
 .DS_Store
